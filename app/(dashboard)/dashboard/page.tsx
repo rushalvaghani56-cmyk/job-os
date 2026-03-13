@@ -60,7 +60,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Dashboard</h1>
         <Badge variant="secondary" className="text-xs">
           Senior Frontend
         </Badge>

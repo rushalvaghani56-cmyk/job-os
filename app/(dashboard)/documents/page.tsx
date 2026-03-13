@@ -706,21 +706,22 @@ export default function DocumentsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-4">
-        <h1 className="text-2xl font-semibold">Documents</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-4 border-b px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+        <h1 className="text-xl font-semibold md:text-2xl">Documents</h1>
+        <div className="flex flex-wrap items-center gap-3">
           {/* Storage Stats */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
             <span className="font-mono">
               {formatFileSize(storageUsed)} / {formatFileSize(storageLimit)}
             </span>
             <Progress value={storagePercent} className="h-2 w-24" />
           </div>
-          <Button variant="outline" className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
+          <Button variant="outline" size="sm" className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary md:size-default">
             <DownloadIcon className="size-4 mr-1.5" />
-            Download All ZIP
+            <span className="hidden sm:inline">Download All ZIP</span>
+            <span className="sm:hidden">ZIP</span>
           </Button>
-          <Button className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
+          <Button size="sm" className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary md:size-default">
             <UploadIcon className="size-4 mr-1.5" />
             Upload
           </Button>
@@ -728,10 +729,10 @@ export default function DocumentsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Folder Tree (30%) */}
-        <div className="w-[30%] border-r bg-surface/50">
-          <ScrollArea className="h-full">
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+        {/* Left Panel - Folder Tree */}
+        <div className="w-full shrink-0 border-b md:w-[30%] md:border-b-0 md:border-r bg-surface/50 max-h-48 md:max-h-none">
+          <ScrollArea className="h-full max-h-48 md:max-h-none">
             <div className="p-4 space-y-1">
               {mockFolderTree.map((node) => (
                 <FolderTreeNode

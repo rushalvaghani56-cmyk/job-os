@@ -33,11 +33,11 @@ export default function AnalyticsPage() {
   const [profile, setProfile] = React.useState("all")
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Analytics</h1>
+          <h1 className="text-xl font-semibold md:text-2xl">Analytics</h1>
           <p className="text-sm text-muted-foreground">
             Track your job search performance and identify opportunities
           </p>

@@ -44,8 +44,8 @@ export default function SettingsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Page Header */}
-      <div className="border-b bg-background px-6 py-4">
-        <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+      <div className="border-b bg-background px-4 py-4 md:px-6">
+        <h1 className="text-xl font-semibold text-foreground md:text-2xl">Settings</h1>
         <p className="text-sm text-muted-foreground">
           Manage your Job OS configuration and preferences.
         </p>
@@ -53,8 +53,8 @@ export default function SettingsPage() {
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Navigation */}
-        <nav className="w-56 shrink-0 border-r bg-muted/30">
+        {/* Sidebar Navigation - Hidden on mobile */}
+        <nav className="hidden w-56 shrink-0 border-r bg-muted/30 md:block">
           <ScrollArea className="h-full py-4">
             <div className="space-y-1 px-3">
               {tabs.map((tab) => {
