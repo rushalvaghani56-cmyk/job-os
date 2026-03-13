@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/src/stores/authStore"
+import { useAuthStore } from "@/stores/authStore"
 import { Loader2 } from "lucide-react"
 
 interface PublicGuardProps {
