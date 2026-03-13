@@ -4,15 +4,19 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { CompanyLogo } from "@/components/shared/company-logo"
+import { PriorityTag } from "@/components/shared/priority-tag"
+import { TimeAgo } from "@/components/shared/time-ago"
+import { EmptyState } from "@/components/shared/empty-state"
 import {
   Star,
   FileText,
   Mail,
-  Clock,
   AlertTriangle,
   Calendar,
   ArrowRight,
+  CheckCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -26,27 +30,9 @@ interface ActionItem {
   title: string
   company: string
   companyLogo?: string
-  age: string
+  timestamp: Date
   actionLabel: string
   actionHref: string
-}
-
-const priorityConfig: Record<
-  ActionPriority,
-  { label: string; className: string }
-> = {
-  dream: {
-    label: "Dream",
-    className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  },
-  high: {
-    label: "High",
-    className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-  },
-  medium: {
-    label: "Medium",
-    className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-  },
 }
 
 const typeIcons: Record<ActionType, typeof Star> = {
@@ -57,66 +43,119 @@ const typeIcons: Record<ActionType, typeof Star> = {
   "interview-prep": Calendar,
 }
 
+// Mock data matching the spec
 const actionItems: ActionItem[] = [
   {
     id: "1",
     type: "dream-match",
     priority: "dream",
-    title: "New match at dream company",
-    company: "Linear",
-    companyLogo: "/logos/linear.svg",
-    age: "2h ago",
+    title: "Stripe — Platform Engineer scored 91",
+    company: "Stripe",
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h ago
     actionLabel: "Review",
-    actionHref: "/dashboard/jobs/1",
+    actionHref: "/review?job=stripe-platform-engineer",
   },
   {
     id: "2",
     type: "review",
     priority: "high",
-    title: "Senior Frontend Engineer",
-    company: "Vercel",
-    companyLogo: "/logos/vercel.svg",
-    age: "4h ago",
+    title: "Resume ready: Google — SWE III",
+    company: "Google",
+    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4h ago
     actionLabel: "Review",
-    actionHref: "/dashboard/jobs/2",
+    actionHref: "/review?job=google-swe",
   },
   {
     id: "3",
-    type: "follow-up",
+    type: "failed",
     priority: "high",
-    title: "Follow-up due",
-    company: "Stripe",
-    companyLogo: "/logos/stripe.svg",
-    age: "1d ago",
-    actionLabel: "Send",
-    actionHref: "/dashboard/outreach/3",
+    title: "Submission failed: Amazon",
+    company: "Amazon",
+    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6h ago
+    actionLabel: "Retry",
+    actionHref: "/applications?job=amazon&action=retry",
   },
   {
     id: "4",
-    type: "failed",
+    type: "follow-up",
     priority: "medium",
-    title: "Submission failed - retry",
-    company: "Notion",
-    companyLogo: "/logos/notion.svg",
-    age: "3h ago",
-    actionLabel: "Retry",
-    actionHref: "/dashboard/applications/4",
+    title: "Follow-up due: Razorpay recruiter",
+    company: "Razorpay",
+    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1d ago
+    actionLabel: "Send",
+    actionHref: "/outreach?contact=razorpay",
   },
   {
     id: "5",
     type: "interview-prep",
-    priority: "high",
-    title: "Interview prep ready",
-    company: "Figma",
-    companyLogo: "/logos/figma.svg",
-    age: "5h ago",
+    priority: "medium",
+    title: "Interview prep: Meta — Day 12",
+    company: "Meta",
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2d ago
     actionLabel: "Prepare",
-    actionHref: "/dashboard/interviews/5",
+    actionHref: "/interview-prep?company=meta",
   },
 ]
 
-export function ActionRequiredPanel() {
-  const totalActions = actionItems.length
+interface ActionRequiredPanelProps {
+  isLoading?: boolean
+}
+
+export function ActionRequiredPanel({ isLoading = false }: ActionRequiredPanelProps) {
+  const totalActions = 16 // Mock total count
+
+  if (isLoading) {
+    return (
+      <Card className="p-5">
+        <CardHeader className="p-0 pb-4">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-6 rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg border p-3">
+              <Skeleton className="h-5 w-14 rounded" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+              <div className="flex-1 space-y-1">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-3 w-12" />
+              <Skeleton className="h-8 w-16 rounded" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (actionItems.length === 0) {
+    return (
+      <Card className="p-5">
+        <CardHeader className="p-0 pb-4">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base">Action Required</CardTitle>
+            <Badge variant="secondary" className="font-mono text-xs">
+              0
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <EmptyState
+            icon={CheckCircle}
+            title="All caught up!"
+            description="No actions pending."
+            action={{
+              label: "Browse Jobs",
+              href: "/jobs",
+            }}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="p-5">
@@ -124,7 +163,7 @@ export function ActionRequiredPanel() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-base">Action Required</CardTitle>
-            <Badge variant="secondary" className="font-mono text-xs">
+            <Badge className="bg-destructive text-destructive-foreground font-mono text-xs">
               {totalActions}
             </Badge>
           </div>
@@ -133,55 +172,46 @@ export function ActionRequiredPanel() {
       <CardContent className="p-0 space-y-3">
         {actionItems.map((item) => {
           const Icon = typeIcons[item.type]
-          const priority = priorityConfig[item.priority]
 
           return (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => window.location.href = item.actionHref}
             >
-              <Badge
-                variant="outline"
-                className={cn("shrink-0 text-xs", priority.className)}
-              >
-                {priority.label}
-              </Badge>
+              <PriorityTag priority={item.priority} />
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{item.title}</p>
                 <div className="flex items-center gap-2">
-                  <Avatar className="h-4 w-4">
-                    <AvatarImage src={item.companyLogo} alt={item.company} />
-                    <AvatarFallback className="text-[8px]">
-                      {item.company.slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <CompanyLogo company={item.company} size="xs" />
                   <span className="text-xs text-muted-foreground">
                     {item.company}
                   </span>
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground shrink-0">
-                {item.age}
-              </span>
+              <TimeAgo date={item.timestamp} className="text-xs text-muted-foreground shrink-0" />
               <Button
                 variant="outline"
                 size="sm"
-                asChild
-                className="shrink-0 focus-visible:ring-2 focus-visible:ring-primary"
+                className="shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.location.href = item.actionHref
+                }}
               >
-                <Link href={item.actionHref}>{item.actionLabel}</Link>
+                {item.actionLabel}
               </Button>
             </div>
           )
         })}
         <Link
-          href="/dashboard/actions"
-          className="flex items-center justify-center gap-1 text-sm text-primary hover:underline pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+          href="/review"
+          className="flex items-center justify-center gap-1 text-sm text-primary hover:underline pt-2"
         >
-          View all
+          View all ({totalActions})
           <ArrowRight className="h-4 w-4" />
         </Link>
       </CardContent>
