@@ -120,11 +120,11 @@ export default function OnboardingStep2() {
   }
 
   const handleBack = () => {
-    router.push("/onboarding/step-1")
+    router.push("/step-1")
   }
 
   const handleSkip = () => {
-    router.push("/onboarding/step-3")
+    router.push("/step-3")
   }
 
   const handleContinue = () => {
@@ -138,7 +138,7 @@ export default function OnboardingStep2() {
       })
     }
     markStepComplete(2)
-    router.push("/onboarding/step-3")
+    router.push("/step-3")
   }
 
   const handleReset = () => {

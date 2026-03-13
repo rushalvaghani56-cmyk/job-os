@@ -215,7 +215,7 @@ export default function OnboardingStep1() {
 
     markStepComplete(1)
     setIsSubmitting(false)
-    router.push("/onboarding/step-2")
+    router.push("/step-2")
   }
 
   return (

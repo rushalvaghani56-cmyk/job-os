@@ -152,7 +152,7 @@ export default function OnboardingStep5() {
   }
 
   const handleBack = () => {
-    router.push("/onboarding/step-4")
+    router.push("/step-4")
   }
 
   const handleComplete = async () => {
