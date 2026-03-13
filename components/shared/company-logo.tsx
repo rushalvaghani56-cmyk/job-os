@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { getInitials, stringToColor } from "@/src/lib/utils";
+import { getInitials, stringToColor } from "@/lib/utils";
 
 interface CompanyLogoProps {
   /** Company name */

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { WarmthLevel } from "@/src/types/outreach";
+import type { WarmthLevel } from "@/types/outreach";
 
 interface WarmthIndicatorProps {
   /** Warmth level */

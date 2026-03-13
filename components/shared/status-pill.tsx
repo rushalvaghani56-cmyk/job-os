@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { JobStatus, ApplicationStatus } from "@/src/types";
+import type { JobStatus, ApplicationStatus } from "@/types";
 
 type Status = JobStatus | ApplicationStatus;
 

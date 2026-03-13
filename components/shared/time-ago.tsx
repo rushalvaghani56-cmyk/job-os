@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { formatRelativeTime } from "@/src/lib/utils";
+import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 interface TimeAgoProps {
