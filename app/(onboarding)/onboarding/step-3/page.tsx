@@ -195,11 +195,11 @@ export default function OnboardingStep3() {
   }
 
   const handleBack = () => {
-    router.push("/step-2")
+    router.push("/onboarding/step-2")
   }
 
   const handleSkip = () => {
-    router.push("/step-4")
+    router.push("/onboarding/step-4")
   }
 
   const handleContinue = async () => {
@@ -216,7 +216,7 @@ export default function OnboardingStep3() {
 
     markStepComplete(3)
     setIsSubmitting(false)
-    router.push("/step-4")
+    router.push("/onboarding/step-4")
   }
 
   return (

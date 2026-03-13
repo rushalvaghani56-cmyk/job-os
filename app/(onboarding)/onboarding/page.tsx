@@ -7,7 +7,7 @@ export default function OnboardingRedirect() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace("/step-1")
+    router.replace("/onboarding/step-1")
   }, [router])
 
   return null
