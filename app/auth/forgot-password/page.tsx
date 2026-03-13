@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowLeft, Briefcase, Loader2, Mail } from "lucide-react"
@@ -12,9 +13,19 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FieldGroup, Field, FieldError } from "@/components/ui/field"
 import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validators/auth"
+import { useAuthStore } from "@/stores/authStore"
 
 export default function ForgotPasswordPage() {
+  const router = useRouter()
+  const { isAuthenticated } = useAuthStore()
   const [isLoading, setIsLoading] = React.useState(false)
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/home")
+    }
+  }, [isAuthenticated, router])
   const [isSubmitted, setIsSubmitted] = React.useState(false)
   const [error, setError] = React.useState("")
   const [submittedEmail, setSubmittedEmail] = React.useState("")

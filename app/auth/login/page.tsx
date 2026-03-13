@@ -41,10 +41,17 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login } = useAuthStore()
+  const { login, isAuthenticated } = useAuthStore()
   const [isLoading, setIsLoading] = React.useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
   const [error, setError] = React.useState("")
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/home")
+    }
+  }, [isAuthenticated, router])
 
   const {
     register,

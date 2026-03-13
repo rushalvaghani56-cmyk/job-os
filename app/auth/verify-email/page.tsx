@@ -2,15 +2,24 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Briefcase, Mail } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuthStore } from "@/stores/authStore"
 
 export default function VerifyEmailPage() {
-  const { user } = useAuthStore()
+  const router = useRouter()
+  const { user, isAuthenticated, hasCompletedOnboarding } = useAuthStore()
   const [cooldown, setCooldown] = React.useState(0)
   const [resendCount, setResendCount] = React.useState(0)
+
+  // Redirect if already authenticated and onboarding complete
+  React.useEffect(() => {
+    if (isAuthenticated && hasCompletedOnboarding) {
+      router.replace("/home")
+    }
+  }, [isAuthenticated, hasCompletedOnboarding, router])
 
   React.useEffect(() => {
     if (cooldown > 0) {

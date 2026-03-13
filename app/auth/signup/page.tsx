@@ -63,13 +63,20 @@ function getPasswordStrength(password: string): {
 
 export default function SignupPage() {
   const router = useRouter()
-  const { signup } = useAuthStore()
+  const { signup, isAuthenticated } = useAuthStore()
   const [isLoading, setIsLoading] = React.useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
   const [error, setError] = React.useState("")
   const [passwordValue, setPasswordValue] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/home")
+    }
+  }, [isAuthenticated, router])
 
   const strength = getPasswordStrength(passwordValue)
 
