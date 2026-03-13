@@ -21,12 +21,14 @@ import {
   PanelLeftClose,
   PanelLeft,
   Zap,
+  Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useShell } from "./shell-context"
+import { ProfileSwitcher } from "./profile-switcher"
 
 interface NavItem {
   label: string
@@ -51,13 +53,21 @@ const mainNavItems: NavItem[] = [
 const secondaryNavItems: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Profiles", href: "/profiles", icon: UserCircle },
-  { label: "Files", href: "/files", icon: Folder },
+  { label: "Documents", href: "/documents", icon: Folder },
   { label: "Activity Log", href: "/activity", icon: Clock },
 ]
 
 const bottomNavItems: NavItem[] = [
   { label: "What's New", href: "/changelog", icon: Sparkles },
 ]
+
+// Admin-only nav items (only visible to owners)
+const adminNavItems: NavItem[] = [
+  { label: "Admin Panel", href: "/admin", icon: Shield },
+]
+
+// Mock: In production, this would come from auth context
+const isOwner = true
 
 function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const pathname = usePathname()
@@ -164,6 +174,11 @@ export function SidebarNav() {
         </Button>
       </div>
 
+      {/* Profile Switcher */}
+      <div className={cn("border-b px-3 py-2", sidebarCollapsed && "px-2")}>
+        <ProfileSwitcher collapsed={sidebarCollapsed} />
+      </div>
+
       {/* Main Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
@@ -192,6 +207,18 @@ export function SidebarNav() {
             </div>
           ))}
         </div>
+
+        {/* Admin Section - Only visible to owners */}
+        {isOwner && (
+          <>
+            <div className="my-4 border-t" />
+            <div className="space-y-1">
+              {adminNavItems.map((item) => (
+                <NavItemComponent key={item.href} item={item} collapsed={sidebarCollapsed} />
+              ))}
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Footer */}

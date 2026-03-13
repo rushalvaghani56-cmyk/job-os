@@ -7,6 +7,7 @@ import { SidebarNav } from "./sidebar-nav"
 import { Topbar } from "./topbar"
 import { CopilotPanel } from "./copilot-panel"
 import { MobileNav } from "./mobile-nav"
+import { CommandPalette } from "./command-palette"
 
 interface AppShellContentProps {
   children: React.ReactNode
@@ -50,6 +51,9 @@ function AppShellContent({ children }: AppShellContentProps) {
 
       {/* Mobile Navigation */}
       <MobileNav />
+
+      {/* Command Palette */}
+      <CommandPalette />
     </div>
   )
 }

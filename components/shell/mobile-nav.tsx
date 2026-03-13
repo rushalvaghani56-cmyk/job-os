@@ -54,7 +54,7 @@ const moreNavItems: NavItem[] = [
   { label: "Market Intel", href: "/market", icon: TrendingUp },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Profiles", href: "/profiles", icon: UserCircle },
-  { label: "Files", href: "/files", icon: Folder },
+  { label: "Documents", href: "/documents", icon: Folder },
   { label: "Activity Log", href: "/activity", icon: Clock },
   { label: "What's New", href: "/changelog", icon: Sparkles },
 ]
