@@ -221,7 +221,7 @@ export function JobTableView({
                 </Link>
               </TableCell>
               <TableCell>
-                <ScoreBadge score={job.score} size="sm" />
+                <ScoreBadge score={job.score} size="sm" isDreamCompany={job.company.isDreamCompany} />
               </TableCell>
               <TableCell>
                 <ConfidenceBar confidence={job.confidence} />

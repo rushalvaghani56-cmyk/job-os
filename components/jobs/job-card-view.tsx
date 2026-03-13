@@ -119,7 +119,8 @@ function JobCard({ job }: { job: Job }) {
     <Card className={cn(
       "p-4 hover:shadow-md transition-shadow group cursor-pointer",
       job.isBlacklisted && "opacity-50",
-      job.isPotentialScam && "border-red-500/30 bg-red-500/5"
+      job.isPotentialScam && "border-red-500/30 bg-red-500/5",
+      job.company.isDreamCompany && "ring-2 ring-violet-400"
     )}>
       <CardContent className="p-0 space-y-3">
         {/* Header: Company + Source */}
@@ -170,7 +171,7 @@ function JobCard({ job }: { job: Job }) {
 
         {/* Score Section */}
         <div className="flex items-center gap-3">
-          <ScoreBadge score={job.score} size="lg" />
+          <ScoreBadge score={job.score} size="lg" isDreamCompany={job.company.isDreamCompany} />
           <div className="flex-1 space-y-1">
             <ConfidenceBar confidence={job.confidence} />
             <DecisionBadge decision={job.decision} />

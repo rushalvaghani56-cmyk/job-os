@@ -6,7 +6,7 @@ import { useTheme } from "next-themes"
 import {
   Search,
   Bell,
-  MessageSquare,
+  Sparkles,
   Sun,
   Moon,
   ChevronDown,
@@ -69,7 +69,7 @@ const mockNotifications: Notification[] = [
 
 export function Topbar() {
   const { theme, setTheme } = useTheme()
-  const { sidebarCollapsed, toggleCopilot, copilotOpen, setMobileMenuOpen } = useShell()
+  const { sidebarCollapsed, toggleCopilot, copilotOpen, setMobileMenuOpen, setCommandPaletteOpen } = useShell()
   const [activeProfile, setActiveProfile] = React.useState(mockProfiles[0])
   const unreadCount = mockNotifications.filter((n) => !n.read).length
 
@@ -92,12 +92,15 @@ export function Topbar() {
       </Button>
 
       {/* Search - Hidden on mobile, shown on md+ */}
-      <div className="relative hidden flex-1 max-w-md md:flex">
+      <div 
+        className="relative hidden flex-1 max-w-md cursor-pointer md:flex"
+        onClick={() => setCommandPaletteOpen(true)}
+      >
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          type="search"
-          placeholder="Search jobs, applications..."
-          className="h-9 pl-9 pr-12 bg-muted/50 border-transparent focus:border-input focus:bg-background"
+          readOnly
+          placeholder="Search jobs, companies, applications... (Cmd+K)"
+          className="h-9 pl-9 pr-12 bg-muted/50 border-transparent cursor-pointer hover:bg-muted/70 transition-colors"
         />
         <Kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex">
           <span className="text-xs">Cmd</span>K
@@ -111,17 +114,21 @@ export function Topbar() {
         size="icon"
         className="min-h-[44px] min-w-[44px] md:hidden"
         aria-label="Search"
+        onClick={() => setCommandPaletteOpen(true)}
       >
         <Search className="h-5 w-5" />
       </Button>
 
       {/* Right Actions */}
       <div className="flex items-center gap-1">
-        {/* Profile Switcher */}
+        {/* Profile Switcher with Fit Score */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 hidden sm:flex">
+            <Button variant="ghost" size="sm" className="gap-2 hidden sm:flex items-center">
               <span className="max-w-[120px] truncate text-sm">{activeProfile.name}</span>
+              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                78% fit
+              </span>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -209,13 +216,19 @@ export function Topbar() {
 
         {/* Copilot Toggle */}
         <Button
-          variant={copilotOpen ? "secondary" : "ghost"}
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={toggleCopilot}
-          className="hidden sm:flex"
+          className={cn(
+            "hidden sm:flex items-center gap-1.5 px-3",
+            copilotOpen && "bg-secondary/10 border-secondary text-secondary"
+          )}
         >
-          <MessageSquare className="h-5 w-5" />
-          <span className="sr-only">Toggle AI Copilot</span>
+          <Sparkles className="h-4 w-4" />
+          <span className="text-sm">Copilot</span>
+          <Kbd className="ml-1 h-5 text-[10px]">
+            <span className="text-[10px]">Cmd</span>J
+          </Kbd>
         </Button>
 
         {/* Theme Toggle */}

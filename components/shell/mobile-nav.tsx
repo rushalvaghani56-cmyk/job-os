@@ -6,21 +6,19 @@ import { usePathname } from "next/navigation"
 import {
   Home,
   Briefcase,
-  CheckSquare,
-  Kanban,
+  ClipboardCheck,
+  Send,
   MoreHorizontal,
-  X,
   Settings,
-  UserCircle,
-  Folder,
-  Clock,
   Users,
+  Folder,
+  ScrollText,
   Mail,
+  Inbox,
   Calendar,
-  BarChart3,
+  BarChart2,
   TrendingUp,
   Sparkles,
-  MessageSquare,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -40,22 +38,22 @@ interface NavItem {
 }
 
 const bottomNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Home },
+  { label: "Home", href: "/dashboard", icon: Home },
   { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12 },
-  { label: "Review", href: "/review", icon: CheckSquare, badge: 24 },
-  { label: "Applications", href: "/applications", icon: Kanban },
+  { label: "Review", href: "/review", icon: ClipboardCheck, badge: 24 },
+  { label: "Applications", href: "/applications", icon: Send },
 ]
 
 const moreNavItems: NavItem[] = [
-  { label: "Outreach", href: "/outreach", icon: Users },
-  { label: "Email Hub", href: "/email", icon: Mail },
-  { label: "Interviews", href: "/interviews", icon: Calendar, badge: 3 },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Outreach", href: "/outreach", icon: Mail },
+  { label: "Email Hub", href: "/email", icon: Inbox },
+  { label: "Analytics", href: "/analytics", icon: BarChart2 },
   { label: "Market Intel", href: "/market", icon: TrendingUp },
+  { label: "Interviews", href: "/interviews", icon: Calendar, badge: 3 },
+  { label: "Profiles", href: "/profiles", icon: Users },
+  { label: "Files", href: "/documents", icon: Folder },
   { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Profiles", href: "/profiles", icon: UserCircle },
-  { label: "Documents", href: "/documents", icon: Folder },
-  { label: "Activity Log", href: "/activity", icon: Clock },
+  { label: "Activity Log", href: "/activity", icon: ScrollText },
   { label: "What's New", href: "/changelog", icon: Sparkles },
 ]
 
