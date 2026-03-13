@@ -28,11 +28,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { CompanyLogo } from "@/components/shared/company-logo";
 import { ScoreBadge } from "@/components/shared/score-badge";
 import { ConfidenceBar } from "@/components/shared/confidence-bar";
-import type { MockJob } from "@/lib/mock-data/jobs";
+import type { JobDetailed } from "@/lib/mock-data/jobs";
 import type { JobStatus } from "@/types/jobs";
 
 interface JobDetailHeaderProps {
-  job: MockJob;
+  job: JobDetailed;
   onStatusChange?: (status: JobStatus) => void;
   onBookmark?: () => void;
   onApply?: () => void;
@@ -111,8 +111,8 @@ export function JobDetailHeader({
           {/* Left section: Job info */}
           <div className="flex items-start gap-4">
             <CompanyLogo
-              company={job.company}
-              logoUrl={job.company_logo_url}
+              company={job.company.name}
+              logoUrl={job.company.logo_url}
               size="lg"
             />
             <div className="min-w-0 flex-1">
@@ -120,7 +120,7 @@ export function JobDetailHeader({
                 {job.title}
               </h1>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{job.company}</span>
+                <span className="font-medium text-foreground">{job.company.name}</span>
                 <span className="text-muted-foreground/50">|</span>
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />

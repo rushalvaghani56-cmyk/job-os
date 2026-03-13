@@ -39,23 +39,23 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { MockJob } from "@/lib/mock-data/jobs";
+import { mockJobsDetailed, type JobDetailed } from "@/lib/mock-data/jobs";
 
 interface ContentTabProps {
-  job: MockJob;
+  jobId: string;
 }
 
 // Mock generated content
-function generateMockCoverLetter(job: MockJob) {
+function generateMockCoverLetter(job: JobDetailed) {
   return `Dear Hiring Manager,
 
-I am writing to express my strong interest in the ${job.title} position at ${job.company}. With my background in software engineering and passion for building impactful products, I believe I would be an excellent addition to your team.
+I am writing to express my strong interest in the ${job.title} position at ${job.company.name}. With my background in software engineering and passion for building impactful products, I believe I would be an excellent addition to your team.
 
 Throughout my career, I have developed expertise in ${job.skills_matched?.slice(0, 3).join(", ") || "modern web technologies"}, which directly align with the requirements for this role. At my previous position, I led initiatives that improved system performance by 40% and contributed to launching products that serve millions of users.
 
-What excites me most about ${job.company} is your commitment to innovation and the opportunity to work on challenging problems at scale. I am particularly drawn to your focus on ${job.work_location_type === "remote" ? "building a distributed team culture" : "collaborative in-office work"} and believe my experience would contribute meaningfully to your goals.
+What excites me most about ${job.company.name} is your commitment to innovation and the opportunity to work on challenging problems at scale. I am particularly drawn to your focus on ${job.work_location_type === "remote" ? "building a distributed team culture" : "collaborative in-office work"} and believe my experience would contribute meaningfully to your goals.
 
-I am eager to bring my technical skills, collaborative mindset, and passion for excellence to ${job.company}. I would welcome the opportunity to discuss how my background and enthusiasm can contribute to your team's success.
+I am eager to bring my technical skills, collaborative mindset, and passion for excellence to ${job.company.name}. I would welcome the opportunity to discuss how my background and enthusiasm can contribute to your team's success.
 
 Thank you for considering my application.
 
@@ -63,7 +63,7 @@ Best regards,
 [Your Name]`;
 }
 
-function generateMockResumeTailoring(job: MockJob) {
+function generateMockResumeTailoring(job: JobDetailed) {
   return {
     highlights: [
       `Add "${job.skills_matched?.[0] || "React"}" to skills section with 4+ years experience`,
@@ -77,9 +77,12 @@ function generateMockResumeTailoring(job: MockJob) {
 
 type ToneOption = "professional" | "conversational" | "enthusiastic";
 
-export function ContentTab({ job }: ContentTabProps) {
-  const [coverLetter, setCoverLetter] = useState(generateMockCoverLetter(job));
-  const [resumeTailoring] = useState(generateMockResumeTailoring(job));
+export function ContentTab({ jobId }: ContentTabProps) {
+  // Find the job from mock data
+  const job = mockJobsDetailed.find((j) => j.id === jobId);
+  
+  const [coverLetter, setCoverLetter] = useState(job ? generateMockCoverLetter(job) : "");
+  const [resumeTailoring] = useState(job ? generateMockResumeTailoring(job) : { highlights: [], summary: "" });
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedCover, setCopiedCover] = useState(false);
   const [copiedResume, setCopiedResume] = useState(false);
@@ -88,6 +91,7 @@ export function ContentTab({ job }: ContentTabProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleRegenerate = () => {
+    if (!job) return;
     setIsGenerating(true);
     setTimeout(() => {
       setCoverLetter(generateMockCoverLetter(job));
@@ -95,6 +99,10 @@ export function ContentTab({ job }: ContentTabProps) {
       toast.success("Cover letter regenerated");
     }, 1500);
   };
+
+  if (!job) {
+    return <div className="text-center py-8 text-muted-foreground">Job not found</div>;
+  }
 
   const handleCopyCoverLetter = async () => {
     await navigator.clipboard.writeText(coverLetter);

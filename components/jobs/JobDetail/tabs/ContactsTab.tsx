@@ -37,10 +37,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { MockJob } from "@/lib/mock-data/jobs";
-
 interface ContactsTabProps {
-  job: MockJob;
+  jobId: string;
+  companyName: string;
 }
 
 type ContactRole = "hiring_manager" | "recruiter" | "engineer" | "founder" | "hr" | "other";
@@ -58,27 +57,28 @@ interface Contact {
 }
 
 // Generate mock contacts
-function generateMockContacts(job: MockJob): Contact[] {
+function generateMockContacts(companyName: string): Contact[] {
   const firstNames = ["Sarah", "Michael", "Emily", "David", "Jessica", "James"];
   const lastNames = ["Chen", "Johnson", "Williams", "Brown", "Garcia", "Miller"];
+  const companyDomain = companyName.toLowerCase().replace(/\s+/g, "");
   
   return [
-    {
-      id: "1",
-      name: `${firstNames[0]} ${lastNames[0]}`,
-      role: "hiring_manager",
-      title: "Engineering Manager",
-      email: `${firstNames[0].toLowerCase()}.${lastNames[0].toLowerCase()}@${job.company.toLowerCase().replace(/\s+/g, "")}.com`,
-      linkedinUrl: "https://linkedin.com/in/example",
-      lastContacted: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: "2",
-      name: `${firstNames[1]} ${lastNames[1]}`,
-      role: "recruiter",
-      title: "Technical Recruiter",
-      email: `${firstNames[1].toLowerCase()}.${lastNames[1].toLowerCase()}@${job.company.toLowerCase().replace(/\s+/g, "")}.com`,
-      linkedinUrl: "https://linkedin.com/in/example2",
+  {
+  id: "1",
+  name: `${firstNames[0]} ${lastNames[0]}`,
+  role: "hiring_manager",
+  title: "Engineering Manager",
+  email: `${firstNames[0].toLowerCase()}.${lastNames[0].toLowerCase()}@${companyDomain}.com`,
+  linkedinUrl: "https://linkedin.com/in/example",
+  lastContacted: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+  },
+  {
+  id: "2",
+  name: `${firstNames[1]} ${lastNames[1]}`,
+  role: "recruiter",
+  title: "Technical Recruiter",
+  email: `${firstNames[1].toLowerCase()}.${lastNames[1].toLowerCase()}@${companyDomain}.com`,
+  linkedinUrl: "https://linkedin.com/in/example2",
       lastContacted: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       notes: "Very responsive, prefers email",
     },
@@ -181,8 +181,8 @@ function ContactCard({ contact }: { contact: Contact }) {
   );
 }
 
-export function ContactsTab({ job }: ContactsTabProps) {
-  const [contacts, setContacts] = useState(generateMockContacts(job));
+export function ContactsTab({ jobId, companyName }: ContactsTabProps) {
+  const [contacts, setContacts] = useState(generateMockContacts(companyName));
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [newContact, setNewContact] = useState({
@@ -258,7 +258,7 @@ export function ContactsTab({ job }: ContactsTabProps) {
             <DialogHeader>
               <DialogTitle>Add Contact</DialogTitle>
               <DialogDescription>
-                Add a new contact related to this job at {job.company}
+                Add a new contact related to this job at {companyName}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -346,7 +346,7 @@ export function ContactsTab({ job }: ContactsTabProps) {
               <Building2 className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
-              <p className="font-medium">{job.company}</p>
+              <p className="font-medium">{companyName}</p>
               <p className="text-sm text-muted-foreground">
                 {contacts.length} contacts found
               </p>

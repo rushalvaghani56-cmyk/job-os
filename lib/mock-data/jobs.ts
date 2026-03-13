@@ -2043,3 +2043,114 @@ export function getUniqueCompanies(jobs: MockJob[]): string[] {
 export function getUniqueLocations(jobs: MockJob[]): string[] {
   return [...new Set(jobs.map((job) => job.location))].sort();
 }
+
+// JobDetailed type for job detail page
+export interface JobDetailed extends MockJob {
+  company: {
+    name: string;
+    logo_url: string | null;
+    website: string | null;
+    description: string;
+    industry: string;
+    size: string;
+    stage: string;
+    hq_location: string;
+    founded_year: number;
+    last_funding_round: string;
+    total_raised: string;
+    key_investors: string[];
+    glassdoor_rating: number;
+    work_life_balance: number;
+    ceo_approval: number;
+    pros: string[];
+    cons: string[];
+    tech_stack: string[];
+    recent_news: Array<{ title: string; date: string }>;
+  };
+  jd_summary: string;
+  responsibilities: string[];
+  qualifications: string[];
+  benefits: string[];
+  interview_process: string[];
+  // Computed properties for UI
+  skills_matched: string[];
+  skills_missing: string[];
+  company_size: number;
+  days_since_posted: number;
+  is_blacklisted: boolean;
+  ai_decision: "strong_apply" | "consider" | "skip";
+}
+
+// Convert MockJob to JobDetailed
+function toJobDetailed(job: MockJob): JobDetailed {
+  // Calculate days since posted
+  const postedDate = new Date(job.posted_date || job.discovered_at);
+  const daysSincePosted = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Extract matched/missing skills from skill_matches
+  const matchedSkills = job.skill_matches.filter(s => s.matched).map(s => s.skill);
+  const missingSkills = job.skill_matches.filter(s => !s.matched).map(s => s.skill);
+  
+  // Determine AI decision based on score
+  const aiDecision = job.match_score && job.match_score >= 85 
+    ? "strong_apply" 
+    : job.match_score && job.match_score >= 70 
+      ? "consider" 
+      : "skip";
+
+  return {
+    ...job,
+    company: {
+      name: job.company,
+      logo_url: job.company_logo_url,
+      website: job.company_website,
+      ...job.company_data,
+    },
+    jd_summary: job.ai_summary,
+    responsibilities: [
+      "Design, build, and maintain scalable backend services and APIs",
+      "Collaborate with cross-functional teams to define and implement new features",
+      "Write clean, well-tested, and efficient code following best practices",
+      "Participate in code reviews and provide constructive feedback",
+      "Mentor junior engineers and contribute to technical documentation",
+      "Investigate and resolve production issues with urgency and precision",
+      "Drive technical decisions and architecture improvements",
+    ],
+    qualifications: [
+      `${job.years_experience_required}+ years of professional software development experience`,
+      `Strong proficiency in ${job.required_skills.slice(0, 3).join(", ")}`,
+      "Experience with distributed systems and microservices architecture",
+      "Excellent problem-solving skills and attention to detail",
+      "Strong communication skills and ability to work collaboratively",
+      job.education_requirement || "Bachelor's degree in Computer Science or equivalent experience",
+    ],
+    benefits: [
+      "Competitive salary and equity package",
+      "Comprehensive health, dental, and vision insurance",
+      "Unlimited PTO policy",
+      "401(k) matching",
+      "Learning and development budget",
+      "Home office setup allowance",
+      "Wellness programs and gym membership",
+    ],
+    interview_process: [
+      "Initial recruiter screen (30 min)",
+      "Technical phone screen with engineer (45 min)",
+      "Take-home coding assignment (2-4 hours)",
+      "Virtual onsite: System design (1 hour)",
+      "Virtual onsite: Coding interview (1 hour)",
+      "Virtual onsite: Behavioral with hiring manager (45 min)",
+      "Final round with team leads (30 min)",
+    ],
+    // Computed properties
+    skills_matched: matchedSkills,
+    skills_missing: missingSkills,
+    company_size: [50, 200, 500, 1000, 5000, 10000][Math.floor(Math.random() * 6)],
+    days_since_posted: daysSincePosted,
+    is_blacklisted: false,
+    ai_decision: aiDecision,
+  };
+}
+
+// Export detailed jobs for job detail page
+export const mockJobsDetailed: JobDetailed[] = mockJobs.map(toJobDetailed);

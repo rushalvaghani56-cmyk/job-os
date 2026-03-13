@@ -23,14 +23,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { CompanyLogo } from "@/components/shared/company-logo";
-import type { MockJob } from "@/lib/mock-data/jobs";
+import type { JobDetailed } from "@/lib/mock-data/jobs";
 
 interface CompanyTabProps {
-  job: MockJob;
+  job: JobDetailed;
 }
 
 // Generate mock company data
-function generateCompanyData(job: MockJob) {
+function generateCompanyData(job: JobDetailed) {
   return {
     name: job.company,
     industry: "Technology",
@@ -83,7 +83,40 @@ function generateCompanyData(job: MockJob) {
 }
 
 export function CompanyTab({ job }: CompanyTabProps) {
-  const company = generateCompanyData(job);
+  // Use company data from job if available, otherwise generate
+  const company = {
+    name: job.company.name,
+    industry: job.company.industry || "Technology",
+    founded: job.company.founded_year,
+    headquarters: job.company.hq_location,
+    website: job.company.website || `https://${job.company.name.toLowerCase().replace(/\s+/g, "")}.com`,
+    linkedin: `https://linkedin.com/company/${job.company.name.toLowerCase().replace(/\s+/g, "-")}`,
+    twitter: `https://twitter.com/${job.company.name.toLowerCase().replace(/\s+/g, "")}`,
+    funding: {
+      stage: job.company.stage,
+      amount: job.company.total_raised,
+    },
+    rating: {
+      overall: job.company.glassdoor_rating,
+      workLife: job.company.work_life_balance,
+      culture: 3.8 + Math.random(),
+      compensation: 4.0 + Math.random() * 0.5,
+      management: 3.5 + Math.random() * 0.8,
+      reviewCount: Math.floor(Math.random() * 500 + 50),
+    },
+    techStack: job.company.tech_stack,
+    perks: [
+      "Remote Work",
+      "Unlimited PTO",
+      "401k Match",
+      "Health Insurance",
+      "Learning Budget",
+    ],
+    recentNews: job.company.recent_news,
+    openRoles: Math.floor(Math.random() * 20 + 5),
+    pros: job.company.pros,
+    cons: job.company.cons,
+  };
 
   return (
     <div className="space-y-6">
@@ -92,8 +125,8 @@ export function CompanyTab({ job }: CompanyTabProps) {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
             <CompanyLogo
-              company={job.company}
-              logoUrl={job.company_logo_url}
+              company={job.company.name}
+              logoUrl={job.company.logo_url}
               size="xl"
             />
             <div className="flex-1">

@@ -20,14 +20,14 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/shared/score-badge";
 import { ConfidenceBar } from "@/components/shared/confidence-bar";
-import type { MockJob } from "@/lib/mock-data/jobs";
+import type { JobDetailed } from "@/lib/mock-data/jobs";
 
 interface OverviewTabProps {
-  job: MockJob;
+  job: JobDetailed;
 }
 
 // AI-generated summary reasons
-const generateMatchReasons = (job: MockJob) => ({
+const generateMatchReasons = (job: JobDetailed) => ({
   good: [
     `Strong skill match (${job.skills_matched?.length || 0}/${(job.skills_matched?.length || 0) + (job.skills_missing?.length || 0)} required skills)`,
     job.salary_max && job.salary_min

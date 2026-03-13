@@ -12,16 +12,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { MockJob } from "@/lib/mock-data/jobs";
+import type { JobDetailed } from "@/lib/mock-data/jobs";
 
 interface DescriptionTabProps {
-  job: MockJob;
+  job: JobDetailed;
 }
 
 // Sample job description sections (in a real app, these would be parsed from the job)
-function generateJobSections(job: MockJob) {
+function generateJobSections(job: JobDetailed) {
   return {
-    about: `${job.company} is a leading technology company building the next generation of AI-powered solutions. We're looking for talented individuals to join our team and help shape the future of technology.`,
+    about: `${job.company.name} is a leading technology company building the next generation of AI-powered solutions. We're looking for talented individuals to join our team and help shape the future of technology.`,
     responsibilities: [
       `Lead the development of ${job.title.toLowerCase().includes("senior") ? "complex" : "new"} features and systems`,
       "Collaborate with cross-functional teams including Product, Design, and QA",
@@ -208,7 +208,7 @@ export function DescriptionTab({ job }: DescriptionTabProps) {
           <Card>
             <CardContent className="pt-6">
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                <h2>About {job.company}</h2>
+                <h2>About {job.company.name}</h2>
                 <p>{sections.about}</p>
 
                 <h2>What You&apos;ll Do</h2>
@@ -243,7 +243,7 @@ export function DescriptionTab({ job }: DescriptionTabProps) {
                 <hr />
                 <p className="text-muted-foreground">
                   <em>
-                    {job.company} is an equal opportunity employer. We celebrate
+                    {job.company.name} is an equal opportunity employer. We celebrate
                     diversity and are committed to creating an inclusive environment
                     for all employees.
                   </em>
