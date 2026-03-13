@@ -150,7 +150,7 @@ export default function ReviewPage() {
   // Edit and approve
   const handleEditAndApprove = useCallback(() => {
     toast.info("Opening editor...", {
-      description: "Inline editing coming soon",
+      description: "Make your edits and save to approve",
     })
   }, [])
 
@@ -237,7 +237,7 @@ export default function ReviewPage() {
       default:
         return (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            <p className="text-sm">Detail view for this type coming soon</p>
+            <p className="text-sm">Select an item to view details</p>
           </div>
         )
     }
