@@ -77,23 +77,22 @@ export function Topbar() {
     <header
       className={cn(
         "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 transition-all duration-200",
-        "md:px-6",
-        sidebarCollapsed ? "md:ml-[68px]" : "md:ml-[260px]"
+        "md:px-6"
       )}
     >
       {/* Mobile Menu Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="min-h-[44px] min-w-[44px] md:hidden"
         onClick={() => setMobileMenuOpen(true)}
       >
         <Menu className="h-5 w-5" />
         <span className="sr-only">Open menu</span>
       </Button>
 
-      {/* Search */}
-      <div className="relative flex-1 max-w-md">
+      {/* Search - Hidden on mobile, shown on md+ */}
+      <div className="relative hidden flex-1 max-w-md md:flex">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
@@ -104,6 +103,17 @@ export function Topbar() {
           <span className="text-xs">Cmd</span>K
         </Kbd>
       </div>
+
+      {/* Mobile Search Button */}
+      <div className="flex-1 md:hidden" />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="min-h-[44px] min-w-[44px] md:hidden"
+        aria-label="Search"
+      >
+        <Search className="h-5 w-5" />
+      </Button>
 
       {/* Right Actions */}
       <div className="flex items-center gap-1">
@@ -147,7 +157,7 @@ export function Topbar() {
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px]">
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
@@ -213,6 +223,7 @@ export function Topbar() {
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="min-h-[44px] min-w-[44px]"
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
@@ -222,7 +233,7 @@ export function Topbar() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/avatars/user.jpg" alt="User" />
                 <AvatarFallback className="text-xs">JD</AvatarFallback>

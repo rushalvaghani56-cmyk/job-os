@@ -67,7 +67,7 @@ export function MobileNav() {
   return (
     <>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-surface md:hidden">
         <div className="flex h-16 items-center justify-around">
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -76,7 +76,7 @@ export function MobileNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors",
+                  "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 px-3 py-2 text-xs transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
@@ -94,7 +94,7 @@ export function MobileNav() {
           })}
           <button
             onClick={() => setMoreOpen(true)}
-            className="flex flex-col items-center gap-1 px-3 py-2 text-xs text-muted-foreground"
+            className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 px-3 py-2 text-xs text-muted-foreground"
           >
             <MoreHorizontal className="h-5 w-5" />
             <span>More</span>
