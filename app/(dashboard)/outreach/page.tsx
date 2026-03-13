@@ -76,7 +76,7 @@ export default function OutreachPage() {
       {/* Header */}
       <div className="shrink-0 p-5 border-b border-border">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-xl font-semibold text-foreground md:text-2xl">
             Outreach Hub
           </h1>
 
@@ -144,9 +144,9 @@ export default function OutreachPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 md:flex-row">
         {/* Contact List */}
-        <div className="w-full md:w-[40%] border-r border-border flex flex-col">
+        <div className={`w-full md:w-[40%] border-r border-border flex flex-col ${selectedContactId ? 'hidden md:flex' : 'flex'}`}>
           <ScrollArea className="flex-1">
             {filteredContacts.length === 0 ? (
               <div className="p-8 text-center">
@@ -178,11 +178,12 @@ export default function OutreachPage() {
         </div>
 
         {/* Contact Detail */}
-        <div className="hidden md:flex md:flex-col md:flex-1">
+        <div className={`flex-1 flex flex-col ${selectedContactId ? 'flex' : 'hidden md:flex'}`}>
           {selectedContact ? (
             <ContactDetail
               contact={selectedContact}
               messages={mockMessages}
+              onBack={() => setSelectedContactId(null)}
             />
           ) : (
             <EmptyContactDetail />

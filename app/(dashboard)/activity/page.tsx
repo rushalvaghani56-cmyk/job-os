@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useMemo, useState } from "react"
 import { format } from "date-fns"
 import {
   SearchIcon,
@@ -443,7 +443,7 @@ export default function ActivityPage() {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex flex-col gap-4 border-b border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold">Activity Log</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Activity Log</h1>
         <div className="flex items-center gap-3">
           <div className="relative flex-1 sm:w-64">
             <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

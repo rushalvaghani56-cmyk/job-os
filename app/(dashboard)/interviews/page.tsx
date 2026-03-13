@@ -394,9 +394,9 @@ export default function InterviewsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-2xl font-semibold text-foreground">Interviews</h1>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <h1 className="text-xl font-semibold text-foreground md:text-2xl">Interviews</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           {/* View Mode Toggle */}
           <div className="flex rounded-lg border border-border">
             <Button
@@ -418,12 +418,21 @@ export default function InterviewsPage() {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePrev}
+              className="h-8 w-8 focus-visible:ring-2 focus-visible:ring-primary sm:hidden"
+              aria-label="Previous"
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrev}
-              className="focus-visible:ring-2 focus-visible:ring-primary"
+              className="hidden focus-visible:ring-2 focus-visible:ring-primary sm:inline-flex"
             >
               <ChevronLeftIcon className="mr-1 size-4" />
               Previous
@@ -438,9 +447,18 @@ export default function InterviewsPage() {
             </Button>
             <Button
               variant="outline"
+              size="icon"
+              onClick={handleNext}
+              className="h-8 w-8 focus-visible:ring-2 focus-visible:ring-primary sm:hidden"
+              aria-label="Next"
+            >
+              <ChevronRightIcon className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleNext}
-              className="focus-visible:ring-2 focus-visible:ring-primary"
+              className="hidden focus-visible:ring-2 focus-visible:ring-primary sm:inline-flex"
             >
               Next
               <ChevronRightIcon className="ml-1 size-4" />
@@ -448,7 +466,7 @@ export default function InterviewsPage() {
           </div>
 
           {/* Current Period Label */}
-          <h2 className="min-w-[160px] text-lg font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground sm:min-w-[160px] sm:text-lg">
             {viewMode === "month"
               ? format(currentDate, "MMMM yyyy")
               : `Week of ${format(calendarRange.start, "MMM d")}`}
@@ -457,7 +475,7 @@ export default function InterviewsPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 border-b border-border px-6 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 sm:gap-4 md:px-6">
         {Object.entries(roundTypeConfig).map(([type, config]) => (
           <div key={type} className="flex items-center gap-1.5">
             <div

@@ -368,7 +368,7 @@ export default function StatusPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-4xl px-4 py-8 md:px-6">
         {/* Overall Status */}
         <div
           className={cn(
@@ -385,7 +385,7 @@ export default function StatusPage() {
               <AlertTriangleIcon className="size-8 text-warning" />
             )}
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">
+              <h1 className="text-xl font-semibold text-foreground md:text-2xl">
                 {overallStatus === "operational"
                   ? "All Systems Operational"
                   : "Partial Service Disruption"}

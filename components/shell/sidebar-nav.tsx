@@ -6,58 +6,68 @@ import { usePathname } from "next/navigation"
 import {
   Home,
   Briefcase,
-  CheckSquare,
-  Kanban,
-  Users,
+  ClipboardCheck,
+  Send,
   Mail,
+  Inbox,
   Calendar,
-  BarChart3,
+  BarChart2,
   TrendingUp,
   Settings,
-  UserCircle,
+  Users,
   Folder,
-  Clock,
+  ScrollText,
   Sparkles,
   PanelLeftClose,
   PanelLeft,
   Zap,
+  Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useShell } from "./shell-context"
+import { ProfileSwitcher } from "./profile-switcher"
 
 interface NavItem {
   label: string
   href: string
   icon: React.ElementType
   badge?: number
-  badgeVariant?: "default" | "destructive"
+  badgeColor?: "green" | "amber" | "blue" | "orange" | "red" | "default"
 }
 
 const mainNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Home },
-  { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12 },
-  { label: "Review Queue", href: "/review", icon: CheckSquare, badge: 24, badgeVariant: "destructive" },
-  { label: "Applications", href: "/applications", icon: Kanban, badge: 8 },
-  { label: "Outreach", href: "/outreach", icon: Users },
-  { label: "Email Hub", href: "/email", icon: Mail },
-  { label: "Interviews", href: "/interviews", icon: Calendar, badge: 3 },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Home", href: "/dashboard", icon: Home },
+  { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12, badgeColor: "green" },
+  { label: "Review Queue", href: "/review", icon: ClipboardCheck, badge: 24, badgeColor: "amber" },
+  { label: "Applications", href: "/applications", icon: Send, badge: 8, badgeColor: "blue" },
+  { label: "Outreach", href: "/outreach", icon: Mail, badge: 3, badgeColor: "orange" },
+  { label: "Email Hub", href: "/email", icon: Inbox, badge: 2, badgeColor: "red" },
+  { label: "Analytics", href: "/analytics", icon: BarChart2 },
   { label: "Market Intel", href: "/market", icon: TrendingUp },
+  { label: "Interviews", href: "/interviews", icon: Calendar, badge: 2, badgeColor: "blue" },
 ]
 
 const secondaryNavItems: NavItem[] = [
+  { label: "Profiles", href: "/profiles", icon: Users },
+  { label: "Files", href: "/documents", icon: Folder },
   { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Profiles", href: "/profiles", icon: UserCircle },
-  { label: "Files", href: "/files", icon: Folder },
-  { label: "Activity Log", href: "/activity", icon: Clock },
+  { label: "Activity Log", href: "/activity", icon: ScrollText },
 ]
 
 const bottomNavItems: NavItem[] = [
   { label: "What's New", href: "/changelog", icon: Sparkles },
 ]
+
+// Admin-only nav items (only visible to owners)
+const adminNavItems: NavItem[] = [
+  { label: "Admin Panel", href: "/admin", icon: Shield },
+]
+
+// Mock: In production, this would come from auth context
+const isOwner = true
 
 function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const pathname = usePathname()
@@ -83,9 +93,12 @@ function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boole
             <span
               className={cn(
                 "ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-mono font-medium",
-                item.badgeVariant === "destructive"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-primary/10 text-primary"
+                item.badgeColor === "green" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                item.badgeColor === "amber" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                item.badgeColor === "blue" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                item.badgeColor === "orange" && "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+                item.badgeColor === "red" && "bg-red-500/10 text-red-600 dark:text-red-400",
+                (!item.badgeColor || item.badgeColor === "default") && "bg-primary/10 text-primary"
               )}
             >
               {item.badge > 99 ? "99+" : item.badge}
@@ -106,9 +119,12 @@ function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boole
             <span
               className={cn(
                 "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-mono font-medium",
-                item.badgeVariant === "destructive"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-primary/10 text-primary"
+                item.badgeColor === "green" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                item.badgeColor === "amber" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                item.badgeColor === "blue" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                item.badgeColor === "orange" && "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+                item.badgeColor === "red" && "bg-red-500/10 text-red-600 dark:text-red-400",
+                (!item.badgeColor || item.badgeColor === "default") && "bg-primary/10 text-primary"
               )}
             >
               {item.badge > 99 ? "99+" : item.badge}
@@ -164,6 +180,11 @@ export function SidebarNav() {
         </Button>
       </div>
 
+      {/* Profile Switcher */}
+      <div className={cn("border-b px-3 py-2", sidebarCollapsed && "px-2")}>
+        <ProfileSwitcher collapsed={sidebarCollapsed} />
+      </div>
+
       {/* Main Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
@@ -192,6 +213,18 @@ export function SidebarNav() {
             </div>
           ))}
         </div>
+
+        {/* Admin Section - Only visible to owners */}
+        {isOwner && (
+          <>
+            <div className="my-4 border-t" />
+            <div className="space-y-1">
+              {adminNavItems.map((item) => (
+                <NavItemComponent key={item.href} item={item} collapsed={sidebarCollapsed} />
+              ))}
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Footer */}

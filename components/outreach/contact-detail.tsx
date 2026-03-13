@@ -24,12 +24,14 @@ import {
   Eye,
   Reply,
   Plus,
+  ArrowLeft,
 } from "lucide-react"
 import type { Contact, Message, Channel, WarmthLevel } from "@/lib/outreach-types"
 
 interface ContactDetailProps {
   contact: Contact
   messages: Message[]
+  onBack?: () => void
 }
 
 const warmthConfig: Record<WarmthLevel, { icon: React.ElementType; label: string; color: string; bg: string }> = {
@@ -72,7 +74,7 @@ function formatFollowUpDate(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function ContactDetail({ contact, messages }: ContactDetailProps) {
+export function ContactDetail({ contact, messages, onBack }: ContactDetailProps) {
   const [newMessage, setNewMessage] = useState("")
   const warmth = warmthConfig[contact.warmth]
   const WarmthIcon = warmth.icon
@@ -82,9 +84,21 @@ export function ContactDetail({ contact, messages }: ContactDetailProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-5 border-b border-border">
+      <div className="p-4 border-b border-border md:p-5">
+        {/* Mobile back button */}
+        {onBack && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="mb-3 -ml-2 md:hidden"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+        )}
         <div className="flex items-start gap-4">
-          <Avatar className="h-14 w-14">
+          <Avatar className="h-12 w-12 md:h-14 md:w-14">
             <AvatarImage src={contact.avatarUrl} alt={contact.name} />
             <AvatarFallback className="bg-muted text-muted-foreground text-lg">
               {getInitials(contact.name)}

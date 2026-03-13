@@ -95,7 +95,7 @@ export default function ApplicationsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Top Bar */}
-      <div className="flex items-center gap-3 border-b border-border bg-background px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3 sm:gap-3">
         {/* View Toggle */}
         <ToggleGroup
           type="single"
@@ -130,10 +130,10 @@ export default function ApplicationsPage() {
         </ToggleGroup>
 
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative min-w-0 flex-1 sm:max-w-md">
           <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search applications..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -145,7 +145,7 @@ export default function ApplicationsPage() {
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as ApplicationStatus | "all")}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-auto min-w-[120px] sm:w-[160px]">
             <FilterIcon className="mr-2 size-4 text-muted-foreground" />
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>

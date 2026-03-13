@@ -247,7 +247,40 @@ export default function ReviewPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      {/* Mobile/Tablet: Stacked layout */}
+      <div className="flex flex-1 flex-col lg:hidden">
+        {/* Queue List - takes half height on tablet, full on mobile when no selection */}
+        <div className={`${selectedItem ? 'h-1/3 border-b' : 'flex-1'} overflow-hidden`}>
+          <ApprovalQueueList
+            items={pendingItems}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
+            onApproveSelected={handleApproveSelected}
+          />
+        </div>
+        {/* Detail View - shows below queue when item selected */}
+        {selectedItem && (
+          <div className="flex flex-1 flex-col min-h-0">
+            <div className="flex-1 min-h-0 overflow-auto">{renderDetailPanel()}</div>
+            {selectedItem.status === "pending" && (
+              <ActionBar
+                onApproveAndSubmit={handleApproveAndSubmit}
+                onApprove={handleApprove}
+                onEditAndApprove={handleEditAndApprove}
+                onReject={handleReject}
+                onRegenerate={handleRegenerate}
+                isLoading={isLoading}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Side-by-side resizable layout */}
+      <ResizablePanelGroup direction="horizontal" className="hidden flex-1 lg:flex">
         {/* Left Panel - Queue List */}
         <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
           <ApprovalQueueList

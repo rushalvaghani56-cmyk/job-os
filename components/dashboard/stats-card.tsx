@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
-import { LucideIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { LucideIcon, RefreshCw } from "lucide-react"
 
 interface StatsCardProps {
   title: string
@@ -15,6 +17,10 @@ interface StatsCardProps {
   miniBar?: {
     segments: { value: number; color: string }[]
   }
+  isLoading?: boolean
+  isError?: boolean
+  onRetry?: () => void
+  onClick?: () => void
 }
 
 const accentColors = {
@@ -32,13 +38,70 @@ export function StatsCard({
   icon: Icon,
   accentColor = "primary",
   miniBar,
+  isLoading = false,
+  isError = false,
+  onRetry,
+  onClick,
 }: StatsCardProps) {
+  if (isLoading) {
+    return (
+      <Card
+        className={cn(
+          "p-5 hover:shadow-md transition-shadow border-l-4",
+          accentColors[accentColor]
+        )}
+      >
+        <CardContent className="p-0">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card
+        className={cn(
+          "p-5 hover:shadow-md transition-shadow border-l-4",
+          accentColors[accentColor]
+        )}
+      >
+        <CardContent className="p-0">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{title}</p>
+              <p className="text-sm text-destructive">Unable to load</p>
+              {onRetry && (
+                <Button variant="ghost" size="sm" onClick={onRetry} className="h-7 px-2 text-xs">
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Retry
+                </Button>
+              )}
+            </div>
+            <div className="rounded-lg bg-muted p-2">
+              <Icon className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card
       className={cn(
         "p-5 hover:shadow-md transition-shadow border-l-4",
-        accentColors[accentColor]
+        accentColors[accentColor],
+        onClick && "cursor-pointer"
       )}
+      onClick={onClick}
     >
       <CardContent className="p-0">
         <div className="flex items-start justify-between">

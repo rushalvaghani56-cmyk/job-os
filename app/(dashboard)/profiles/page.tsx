@@ -68,7 +68,7 @@ export default function ProfilesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Profiles</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Profiles</h1>
         <div className="flex items-center gap-3">
           {profiles.length > 1 && (
             <Button
@@ -91,7 +91,7 @@ export default function ProfilesPage() {
       </div>
 
       {/* Profile Grid */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {profiles.map((profile) => (
           <ProfileCard
             key={profile.id}

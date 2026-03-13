@@ -6,21 +6,21 @@ import { usePathname } from "next/navigation"
 import {
   Home,
   Briefcase,
-  CheckSquare,
-  Kanban,
+  ClipboardCheck,
+  Send,
   MoreHorizontal,
-  X,
   Settings,
-  UserCircle,
-  Folder,
-  Clock,
   Users,
+  Folder,
+  ScrollText,
   Mail,
+  Inbox,
   Calendar,
-  BarChart3,
+  BarChart2,
   TrendingUp,
   Sparkles,
   MessageSquare,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -40,22 +40,23 @@ interface NavItem {
 }
 
 const bottomNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Home },
+  { label: "Home", href: "/dashboard", icon: Home },
   { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12 },
-  { label: "Review", href: "/review", icon: CheckSquare, badge: 24 },
-  { label: "Applications", href: "/applications", icon: Kanban },
+  { label: "Review", href: "/review", icon: ClipboardCheck, badge: 24 },
+  { label: "Applications", href: "/applications", icon: Send },
 ]
 
 const moreNavItems: NavItem[] = [
-  { label: "Outreach", href: "/outreach", icon: Users },
-  { label: "Email Hub", href: "/email", icon: Mail },
-  { label: "Interviews", href: "/interviews", icon: Calendar, badge: 3 },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Outreach", href: "/outreach", icon: Mail },
+  { label: "Email Hub", href: "/email", icon: Inbox },
+  { label: "Analytics", href: "/analytics", icon: BarChart2 },
   { label: "Market Intel", href: "/market", icon: TrendingUp },
+  { label: "Interviews", href: "/interviews", icon: Calendar, badge: 3 },
+  { label: "Profiles", href: "/profiles", icon: Users },
+  { label: "Files", href: "/documents", icon: Folder },
   { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Profiles", href: "/profiles", icon: UserCircle },
-  { label: "Files", href: "/files", icon: Folder },
-  { label: "Activity Log", href: "/activity", icon: Clock },
+  { label: "Activity Log", href: "/activity", icon: ScrollText },
+  { label: "Notifications", href: "/notifications", icon: Bell, badge: 4 },
   { label: "What's New", href: "/changelog", icon: Sparkles },
 ]
 
@@ -67,7 +68,7 @@ export function MobileNav() {
   return (
     <>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-surface md:hidden">
         <div className="flex h-16 items-center justify-around">
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -76,7 +77,7 @@ export function MobileNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors",
+                  "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 px-3 py-2 text-xs transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
@@ -94,7 +95,7 @@ export function MobileNav() {
           })}
           <button
             onClick={() => setMoreOpen(true)}
-            className="flex flex-col items-center gap-1 px-3 py-2 text-xs text-muted-foreground"
+            className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 px-3 py-2 text-xs text-muted-foreground"
           >
             <MoreHorizontal className="h-5 w-5" />
             <span>More</span>

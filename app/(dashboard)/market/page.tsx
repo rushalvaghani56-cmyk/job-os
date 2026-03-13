@@ -451,7 +451,7 @@ export default function MarketIntelligencePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Market Intelligence</h1>
+          <h1 className="text-xl font-semibold md:text-2xl">Market Intelligence</h1>
           <p className="text-sm text-muted-foreground">
             Data-driven insights from all discovered job postings
           </p>

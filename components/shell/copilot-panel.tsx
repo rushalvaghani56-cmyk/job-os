@@ -453,12 +453,12 @@ export function CopilotPanel() {
 
   return (
     <aside
-      style={{ width: panelWidth }}
       className={cn(
-        "fixed right-0 top-0 z-50 flex h-full flex-col border-l bg-background",
-        "md:relative md:shrink-0",
+        "fixed inset-0 z-50 flex flex-col bg-background",
+        "md:relative md:inset-auto md:right-0 md:top-0 md:h-full md:border-l md:shrink-0 md:w-[380px]",
         isResizing && "select-none"
       )}
+      style={{ ['--panel-width' as string]: `${panelWidth}px` }}
     >
       {/* Resize Handle */}
       <div

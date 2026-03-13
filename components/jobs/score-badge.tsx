@@ -1,28 +1,29 @@
 "use client"
 
+import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ScoreBadgeProps {
   score: number
   size?: "sm" | "md" | "lg"
   showLabel?: boolean
+  isDreamCompany?: boolean
 }
 
-export function ScoreBadge({ score, size = "md", showLabel = false }: ScoreBadgeProps) {
+export function ScoreBadge({ score, size = "md", showLabel = false, isDreamCompany = false }: ScoreBadgeProps) {
+  // Per audit spec: 85-100 = emerald, 70-84 = blue, 60-69 = amber, <60 = slate
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30"
-    if (score >= 60) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-    if (score >= 40) return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-    if (score >= 20) return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
-    return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30"
+    if (score >= 85) return "bg-emerald-500 text-white"
+    if (score >= 70) return "bg-blue-500 text-white"
+    if (score >= 60) return "bg-amber-500 text-white"
+    return "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
   }
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return "Excellent"
-    if (score >= 60) return "Good"
-    if (score >= 40) return "Fair"
-    if (score >= 20) return "Low"
-    return "Poor"
+    if (score >= 85) return "Excellent"
+    if (score >= 70) return "Good"
+    if (score >= 60) return "Fair"
+    return "Low"
   }
 
   const sizes = {
@@ -35,11 +36,13 @@ export function ScoreBadge({ score, size = "md", showLabel = false }: ScoreBadge
     <div className="flex items-center gap-1.5">
       <span
         className={cn(
-          "inline-flex items-center justify-center rounded-md border font-mono font-semibold",
+          "inline-flex items-center justify-center rounded-lg font-mono font-semibold",
           getScoreColor(score),
-          sizes[size]
+          sizes[size],
+          isDreamCompany && "ring-2 ring-violet-500"
         )}
       >
+        {isDreamCompany && <Star className="h-3 w-3 mr-1 fill-current" />}
         {score}
       </span>
       {showLabel && (

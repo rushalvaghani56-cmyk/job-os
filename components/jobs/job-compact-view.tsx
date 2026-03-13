@@ -119,7 +119,7 @@ export function JobCompactView({
                 />
               </div>
               <div className="w-12">
-                <ScoreBadge score={job.score} size="sm" />
+                <ScoreBadge score={job.score} size="sm" isDreamCompany={job.company.isDreamCompany} />
               </div>
               <div className="flex-1 min-w-[200px]">
                 <Link

@@ -422,6 +422,45 @@ export function FilterSidebar({ filters, onFiltersChange, isCollapsed, onToggleC
             </div>
           </FilterSection>
 
+          {/* Date Posted */}
+          <FilterSection title="Date Posted" defaultOpen={false}>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "text-xs h-7",
+                  filters.dateRange?.preset === "today" && "bg-primary/10 border-primary text-primary"
+                )}
+                onClick={() => updateFilter("dateRange", { preset: "today" })}
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "text-xs h-7",
+                  filters.dateRange?.preset === "7days" && "bg-primary/10 border-primary text-primary"
+                )}
+                onClick={() => updateFilter("dateRange", { preset: "7days" })}
+              >
+                7 days
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "text-xs h-7",
+                  filters.dateRange?.preset === "30days" && "bg-primary/10 border-primary text-primary"
+                )}
+                onClick={() => updateFilter("dateRange", { preset: "30days" })}
+              >
+                30 days
+              </Button>
+            </div>
+          </FilterSection>
+
           {/* Toggles */}
           <FilterSection title="Quick Filters">
             <div className="space-y-3">

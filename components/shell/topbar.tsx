@@ -6,7 +6,7 @@ import { useTheme } from "next-themes"
 import {
   Search,
   Bell,
-  MessageSquare,
+  Sparkles,
   Sun,
   Moon,
   ChevronDown,
@@ -69,7 +69,7 @@ const mockNotifications: Notification[] = [
 
 export function Topbar() {
   const { theme, setTheme } = useTheme()
-  const { sidebarCollapsed, toggleCopilot, copilotOpen, setMobileMenuOpen } = useShell()
+  const { sidebarCollapsed, toggleCopilot, copilotOpen, setMobileMenuOpen, setCommandPaletteOpen } = useShell()
   const [activeProfile, setActiveProfile] = React.useState(mockProfiles[0])
   const unreadCount = mockNotifications.filter((n) => !n.read).length
 
@@ -77,41 +77,58 @@ export function Topbar() {
     <header
       className={cn(
         "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 transition-all duration-200",
-        "md:px-6",
-        sidebarCollapsed ? "md:ml-[68px]" : "md:ml-[260px]"
+        "md:px-6"
       )}
     >
       {/* Mobile Menu Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="min-h-[44px] min-w-[44px] md:hidden"
         onClick={() => setMobileMenuOpen(true)}
       >
         <Menu className="h-5 w-5" />
         <span className="sr-only">Open menu</span>
       </Button>
 
-      {/* Search */}
-      <div className="relative flex-1 max-w-md">
+      {/* Search - Hidden on mobile, shown on md+ */}
+      <div 
+        className="relative hidden flex-1 max-w-md cursor-pointer md:flex"
+        onClick={() => setCommandPaletteOpen(true)}
+      >
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          type="search"
-          placeholder="Search jobs, applications..."
-          className="h-9 pl-9 pr-12 bg-muted/50 border-transparent focus:border-input focus:bg-background"
+          readOnly
+          placeholder="Search jobs, companies, applications... (Cmd+K)"
+          className="h-9 pl-9 pr-12 bg-muted/50 border-transparent cursor-pointer hover:bg-muted/70 transition-colors"
         />
         <Kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex">
           <span className="text-xs">Cmd</span>K
         </Kbd>
       </div>
 
+      {/* Mobile Search Button */}
+      <div className="flex-1 md:hidden" />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="min-h-[44px] min-w-[44px] md:hidden"
+        aria-label="Search"
+        onClick={() => setCommandPaletteOpen(true)}
+      >
+        <Search className="h-5 w-5" />
+      </Button>
+
       {/* Right Actions */}
       <div className="flex items-center gap-1">
-        {/* Profile Switcher */}
+        {/* Profile Switcher with Fit Score */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 hidden sm:flex">
+            <Button variant="ghost" size="sm" className="gap-2 hidden sm:flex items-center">
               <span className="max-w-[120px] truncate text-sm">{activeProfile.name}</span>
+              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                78% fit
+              </span>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -147,7 +164,7 @@ export function Topbar() {
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px]">
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
@@ -190,8 +207,8 @@ export function Topbar() {
               ))}
             </div>
             <div className="border-t p-2">
-              <Button variant="ghost" size="sm" className="w-full justify-center text-xs">
-                View All Notifications
+              <Button variant="ghost" size="sm" className="w-full justify-center text-xs" asChild>
+                <Link href="/notifications">View All Notifications</Link>
               </Button>
             </div>
           </PopoverContent>
@@ -199,13 +216,19 @@ export function Topbar() {
 
         {/* Copilot Toggle */}
         <Button
-          variant={copilotOpen ? "secondary" : "ghost"}
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={toggleCopilot}
-          className="hidden sm:flex"
+          className={cn(
+            "hidden sm:flex items-center gap-1.5 px-3",
+            copilotOpen && "bg-secondary/10 border-secondary text-secondary"
+          )}
         >
-          <MessageSquare className="h-5 w-5" />
-          <span className="sr-only">Toggle AI Copilot</span>
+          <Sparkles className="h-4 w-4" />
+          <span className="text-sm">Copilot</span>
+          <Kbd className="ml-1 h-5 text-[10px]">
+            <span className="text-[10px]">Cmd</span>J
+          </Kbd>
         </Button>
 
         {/* Theme Toggle */}
@@ -213,6 +236,7 @@ export function Topbar() {
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="min-h-[44px] min-w-[44px]"
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
@@ -222,7 +246,7 @@ export function Topbar() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/avatars/user.jpg" alt="User" />
                 <AvatarFallback className="text-xs">JD</AvatarFallback>
