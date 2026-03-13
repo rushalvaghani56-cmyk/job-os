@@ -19,6 +19,8 @@ import {
   BarChart2,
   TrendingUp,
   Sparkles,
+  MessageSquare,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -54,6 +56,7 @@ const moreNavItems: NavItem[] = [
   { label: "Files", href: "/documents", icon: Folder },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Activity Log", href: "/activity", icon: ScrollText },
+  { label: "Notifications", href: "/notifications", icon: Bell, badge: 4 },
   { label: "What's New", href: "/changelog", icon: Sparkles },
 ]
 

@@ -23,6 +23,7 @@ import {
   Sun,
   Moon,
   Download,
+  UserCircle,
 } from "lucide-react"
 import {
   CommandDialog,

@@ -207,8 +207,8 @@ export function Topbar() {
               ))}
             </div>
             <div className="border-t p-2">
-              <Button variant="ghost" size="sm" className="w-full justify-center text-xs">
-                View All Notifications
+              <Button variant="ghost" size="sm" className="w-full justify-center text-xs" asChild>
+                <Link href="/notifications">View All Notifications</Link>
               </Button>
             </div>
           </PopoverContent>
