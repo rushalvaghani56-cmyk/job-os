@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 
-export default function OnboardingRedirectPage() {
+export default function OnboardingRedirect() {
   const router = useRouter()
 
   useEffect(() => {

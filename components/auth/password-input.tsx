@@ -5,8 +5,9 @@ import { Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-interface PasswordInputProps extends Omit<React.ComponentProps<"input">, "type"> {
+interface PasswordInputProps extends Omit<React.ComponentProps<"input">, "type" | "ref"> {
   showStrength?: boolean
+  ref?: React.Ref<HTMLInputElement>
 }
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -25,7 +26,8 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   return { score: 5, label: "Very Strong", color: "bg-emerald-600" }
 }
 
-function PasswordInput({ className, showStrength = false, ...props }: PasswordInputProps) {
+const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
+  ({ className, showStrength = false, ...props }, ref) => {
   const [showPassword, setShowPassword] = React.useState(false)
   const [strength, setStrength] = React.useState({ score: 0, label: "", color: "" })
   
@@ -45,6 +47,7 @@ function PasswordInput({ className, showStrength = false, ...props }: PasswordIn
     <div className="space-y-2">
       <div className="relative">
         <input
+          ref={ref}
           type={showPassword ? "text" : "password"}
           className={cn(
             "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 pr-10 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
@@ -99,6 +102,8 @@ function PasswordInput({ className, showStrength = false, ...props }: PasswordIn
       )}
     </div>
   )
-}
+})
+
+PasswordInput.displayName = "PasswordInput"
 
 export { PasswordInput }

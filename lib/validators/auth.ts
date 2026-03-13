@@ -29,14 +29,10 @@ export const signupSchema = z
       .string()
       .min(1, "Password is required")
       .min(8, "Password must be at least 8 characters")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-      ),
+      .regex(/[A-Z]/, "Must contain uppercase letter")
+      .regex(/[0-9]/, "Must contain number")
+      .regex(/[^A-Za-z0-9]/, "Must contain special character"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
-    acceptTerms: z
-      .boolean()
-      .refine((val) => val === true, "You must accept the terms and conditions"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
