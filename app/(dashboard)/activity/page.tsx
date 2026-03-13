@@ -34,11 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 
 // Types
@@ -283,59 +278,58 @@ function ActivityRow({ log, isEven }: { log: ActivityLog; isEven: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger asChild>
-        <TableRow
-          className={cn(
-            "cursor-pointer transition-colors",
-            isEven ? "bg-background" : "bg-surface",
-            isOpen && "bg-surface-raised"
-          )}
-        >
-          <TableCell className="w-[180px]">
-            <span className="font-mono text-xs text-muted-foreground">
-              {format(log.timestamp, "MMM dd, HH:mm:ss")}
-            </span>
-          </TableCell>
-          <TableCell>
-            <span className="text-sm">{log.action}</span>
-          </TableCell>
-          <TableCell>
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-xs font-medium capitalize",
-                getActorBadgeStyles(log.actor)
-              )}
-            >
-              {log.actor}
-            </Badge>
-          </TableCell>
-          <TableCell>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground capitalize">
-                {log.entityType}
-              </span>
-              <a
-                href={getEntityLink(log.entityType, log.entityId)}
-                onClick={(e) => e.stopPropagation()}
-                className="group inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
-              >
-                {log.entityId.slice(0, 12)}...
-                <ExternalLinkIcon className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </a>
-            </div>
-          </TableCell>
-          <TableCell className="text-right">
-            {isOpen ? (
-              <ChevronDownIcon className="size-4 text-muted-foreground" />
-            ) : (
-              <ChevronRightIcon className="size-4 text-muted-foreground" />
+    <>
+      <TableRow
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "cursor-pointer transition-colors",
+          isEven ? "bg-background" : "bg-surface",
+          isOpen && "bg-surface-raised"
+        )}
+      >
+        <TableCell className="w-[180px]">
+          <span className="font-mono text-xs text-muted-foreground">
+            {format(log.timestamp, "MMM dd, HH:mm:ss")}
+          </span>
+        </TableCell>
+        <TableCell>
+          <span className="text-sm">{log.action}</span>
+        </TableCell>
+        <TableCell>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs font-medium capitalize",
+              getActorBadgeStyles(log.actor)
             )}
-          </TableCell>
-        </TableRow>
-      </CollapsibleTrigger>
-      <CollapsibleContent asChild>
+          >
+            {log.actor}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground capitalize">
+              {log.entityType}
+            </span>
+            <a
+              href={getEntityLink(log.entityType, log.entityId)}
+              onClick={(e) => e.stopPropagation()}
+              className="group inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+            >
+              {log.entityId.slice(0, 12)}...
+              <ExternalLinkIcon className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </a>
+          </div>
+        </TableCell>
+        <TableCell className="text-right">
+          {isOpen ? (
+            <ChevronDownIcon className="size-4 text-muted-foreground" />
+          ) : (
+            <ChevronRightIcon className="size-4 text-muted-foreground" />
+          )}
+        </TableCell>
+      </TableRow>
+      {isOpen && (
         <tr>
           <td colSpan={5} className="p-0">
             <div className="bg-surface-raised border-y border-border px-4 py-3">
@@ -355,8 +349,8 @@ function ActivityRow({ log, isEven }: { log: ActivityLog; isEven: boolean }) {
             </div>
           </td>
         </tr>
-      </CollapsibleContent>
-    </Collapsible>
+      )}
+    </>
   )
 }
 
