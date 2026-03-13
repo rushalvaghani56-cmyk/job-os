@@ -11,6 +11,7 @@ import {
   Calendar,
   Mail,
   Flag,
+  Bell,
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TabGeneral } from "@/components/settings/tab-general"
@@ -22,6 +23,7 @@ import { TabSources } from "@/components/settings/tab-sources"
 import { TabSchedules } from "@/components/settings/tab-schedules"
 import { TabEmail } from "@/components/settings/tab-email"
 import { TabFeatureFlags } from "@/components/settings/tab-feature-flags"
+import { TabNotifications } from "@/components/settings/tab-notifications"
 import { cn } from "@/lib/utils"
 
 const tabs = [
@@ -33,6 +35,7 @@ const tabs = [
   { id: "sources", label: "Sources", icon: Globe, component: TabSources },
   { id: "schedules", label: "Schedules", icon: Calendar, component: TabSchedules },
   { id: "email", label: "Email", icon: Mail, component: TabEmail },
+  { id: "notifications", label: "Notifications", icon: Bell, component: TabNotifications },
   { id: "feature-flags", label: "Feature Flags", icon: Flag, component: TabFeatureFlags },
 ]
 
