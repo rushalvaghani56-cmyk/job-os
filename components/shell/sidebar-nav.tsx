@@ -52,7 +52,7 @@ const mainNavItems: NavItem[] = [
 
 const secondaryNavItems: NavItem[] = [
   { label: "Profiles", href: "/profiles", icon: Users },
-  { label: "Files", href: "/documents", icon: Folder },
+  { label: "Documents", href: "/documents", icon: Folder },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Activity Log", href: "/activity", icon: ScrollText },
 ]
