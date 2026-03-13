@@ -3,7 +3,7 @@
 import { AppShell } from "@/components/shell/app-shell"
 import { AuthGuard } from "@/components/auth/auth-guard"
 
-export default function DashboardLayout({
+export default function AnalyticsLayout({
   children,
 }: {
   children: React.ReactNode

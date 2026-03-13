@@ -3,13 +3,13 @@
 import { AppShell } from "@/components/shell/app-shell"
 import { AuthGuard } from "@/components/auth/auth-guard"
 
-export default function DashboardLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <AuthGuard requireOnboarding={true}>
+    <AuthGuard requireAdmin={true} requireOnboarding={true}>
       <AppShell>{children}</AppShell>
     </AuthGuard>
   )
