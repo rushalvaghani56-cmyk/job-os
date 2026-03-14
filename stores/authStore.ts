@@ -139,7 +139,6 @@ setOnboardingComplete: (complete: boolean) => {
           });
         }
       },
-    },
     }),
     {
       name: "auth-storage",
