@@ -11,12 +11,13 @@ interface CompanyLogoProps {
   /** Optional logo URL */
   logoUrl?: string | null;
   /** Size variant */
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   /** Additional class names */
   className?: string;
 }
 
 const sizeConfig = {
+  xs: { container: "h-5 w-5", text: "text-[10px]", image: 20 },
   sm: { container: "h-8 w-8", text: "text-xs", image: 32 },
   md: { container: "h-10 w-10", text: "text-sm", image: 40 },
   lg: { container: "h-12 w-12", text: "text-base", image: 48 },
