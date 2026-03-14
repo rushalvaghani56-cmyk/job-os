@@ -181,7 +181,7 @@ export default function OnboardingStep5() {
     // Redirect after animation
     setTimeout(() => {
       reset()
-      router.push("/home")
+      router.push("/dashboard")
     }, 2000)
   }
 

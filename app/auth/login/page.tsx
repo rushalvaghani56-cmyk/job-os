@@ -49,7 +49,7 @@ export default function LoginPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/home")
+      router.replace("/dashboard")
     }
   }, [isAuthenticated, router])
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
 
     try {
       await login(data.email, data.password)
-      router.push("/home")
+      router.push("/dashboard")
     } catch {
       setError("Invalid email or password")
     } finally {
@@ -85,7 +85,7 @@ export default function LoginPage() {
     
     try {
       await login("google.user@example.com", "mock-password")
-      router.push("/home")
+      router.push("/dashboard")
     } catch {
       setError("Google sign in failed. Please try again.")
     } finally {
