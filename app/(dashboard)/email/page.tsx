@@ -198,6 +198,48 @@ const mockDetectedEmails: DetectedEmail[] = [
     autoAction: "Updated application status to Rejected",
   },
   {
+    id: "email_012",
+    date: new Date(2026, 2, 11, 8, 30),
+    from: "talent@meta.com",
+    subject: "Application Update - Software Engineer",
+    snippet:
+      "Thank you for your patience during our review process. After careful consideration, we've decided to proceed with other candidates...",
+    category: "rejections",
+    confidence: 96,
+    applicationId: "app_012",
+    applicationTitle: "Software Engineer",
+    company: "Meta",
+    autoAction: "Updated application status to Rejected",
+  },
+  {
+    id: "email_013",
+    date: new Date(2026, 2, 10, 16, 45),
+    from: "recruiting@netflix.com",
+    subject: "Update on your Netflix application",
+    snippet:
+      "We appreciate your interest in Netflix. At this time, we've decided to move forward with candidates whose experience more closely matches...",
+    category: "rejections",
+    confidence: 94,
+    applicationId: "app_013",
+    applicationTitle: "Senior Backend Engineer",
+    company: "Netflix",
+    autoAction: "Updated application status to Rejected",
+  },
+  {
+    id: "email_014",
+    date: new Date(2026, 2, 9, 11, 20),
+    from: "jobs@shopify.com",
+    subject: "Regarding your application",
+    snippet:
+      "We wanted to follow up on your application for the Staff Engineer position. Unfortunately, we will not be moving forward...",
+    category: "rejections",
+    confidence: 92,
+    applicationId: "app_014",
+    applicationTitle: "Staff Engineer",
+    company: "Shopify",
+    autoAction: "Updated application status to Rejected",
+  },
+  {
     id: "email_006",
     date: new Date(2026, 2, 11, 15, 30),
     from: "talent@openai.com",
@@ -214,6 +256,25 @@ const mockDetectedEmails: DetectedEmail[] = [
       interviewDate: new Date(2026, 2, 19, 10, 0),
       platform: "Google Meet",
       interviewer: "Dr. James Liu",
+    },
+  },
+  {
+    id: "email_011",
+    date: new Date(2026, 2, 12, 11, 0),
+    from: "recruiting@airbnb.com",
+    subject: "Interview Confirmation - Senior Software Engineer",
+    snippet:
+      "We're excited to confirm your onsite interview for the Senior Software Engineer position. Please arrive 15 minutes early...",
+    category: "interviews",
+    confidence: 96,
+    applicationId: "app_011",
+    applicationTitle: "Senior Software Engineer",
+    company: "Airbnb",
+    autoAction: "Created calendar event",
+    extractedData: {
+      interviewDate: new Date(2026, 2, 20, 9, 0),
+      platform: "Onsite",
+      interviewer: "Engineering Panel",
     },
   },
   {
@@ -270,6 +331,20 @@ const mockDetectedEmails: DetectedEmail[] = [
     applicationId: "app_008",
     applicationTitle: "Full Stack Engineer",
     company: "Ramp",
+    autoAction: "Linked to application",
+  },
+  {
+    id: "email_015",
+    date: new Date(2026, 2, 8, 10, 0),
+    from: "no-reply@workday.com",
+    subject: "Application Confirmation - Coinbase",
+    snippet:
+      "Thank you for applying to the Infrastructure Engineer position at Coinbase. Your application has been successfully submitted...",
+    category: "confirmations",
+    confidence: 99,
+    applicationId: "app_015",
+    applicationTitle: "Infrastructure Engineer",
+    company: "Coinbase",
     autoAction: "Linked to application",
   },
 ]
@@ -1549,7 +1624,18 @@ export default function EmailPage() {
             >
               Cancel
             </Button>
-            <Button className="rounded-lg">Create Template</Button>
+            <Button
+              className="rounded-lg"
+              onClick={() => {
+                toast({
+                  title: "Template created",
+                  description: "Your custom template has been saved.",
+                })
+                setShowCreateTemplate(false)
+              }}
+            >
+              Create Template
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
