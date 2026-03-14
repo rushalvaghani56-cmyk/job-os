@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/components/ui/use-toast"
 
 // Types
 interface FileItem {
@@ -649,16 +650,31 @@ function FileListRow({
 }
 
 export default function DocumentsPage() {
+  const { toast } = useToast()
   const [selectedFolder, setSelectedFolder] = useState<FolderNode | null>(
-    mockFolderTree[0]
+  mockFolderTree[0]
   )
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set(["profile-senior-fe"])
+  new Set(["profile-senior-fe"])
   )
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
   const [deleteFile, setDeleteFile] = useState<FileItem | null>(null)
+  
+  const handleDownload = (file: FileItem) => {
+    toast({
+      title: "Download started",
+      description: `Downloading ${file.name}...`,
+    })
+  }
+  
+  const handleUpload = () => {
+    toast({
+      title: "Upload started",
+      description: "Your files are being uploaded...",
+    })
+  }
 
   const storageUsed = getTotalStorageUsed(mockFolderTree)
   const storageLimit = 500 * 1024 * 1024 // 500MB
@@ -699,7 +715,11 @@ export default function DocumentsPage() {
             <span className="hidden sm:inline">Download All ZIP</span>
             <span className="sm:hidden">ZIP</span>
           </Button>
-          <Button size="sm" className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary md:size-default">
+          <Button 
+            size="sm" 
+            className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary md:size-default"
+            onClick={handleUpload}
+          >
             <UploadIcon className="size-4 mr-1.5" />
             Upload
           </Button>
@@ -781,7 +801,7 @@ export default function DocumentsPage() {
                             key={file.id}
                             file={file}
                             onPreview={() => setPreviewFile(file)}
-                            onDownload={() => {}}
+                            onDownload={() => handleDownload(file)}
                             onDelete={() => setDeleteFile(file)}
                           />
                         ))}
@@ -793,7 +813,7 @@ export default function DocumentsPage() {
                             key={file.id}
                             file={file}
                             onPreview={() => setPreviewFile(file)}
-                            onDownload={() => {}}
+                            onDownload={() => handleDownload(file)}
                             onDelete={() => setDeleteFile(file)}
                           />
                         ))}
@@ -808,7 +828,7 @@ export default function DocumentsPage() {
                           ? "Try a different search term"
                           : "Upload files to this folder to get started"}
                       </p>
-                      <Button className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
+                      <Button className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary" onClick={handleUpload}>
                         <UploadIcon className="size-4 mr-1.5" />
                         Upload Files
                       </Button>

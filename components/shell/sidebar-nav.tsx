@@ -22,6 +22,7 @@ import {
   PanelLeft,
   Zap,
   Shield,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -53,8 +54,9 @@ const mainNavItems: NavItem[] = [
 const secondaryNavItems: NavItem[] = [
   { label: "Profiles", href: "/profiles", icon: Users },
   { label: "Documents", href: "/documents", icon: Folder },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Notifications", href: "/notifications", icon: Bell, badge: 5, badgeColor: "red" },
   { label: "Activity Log", href: "/activity", icon: ScrollText },
+  { label: "Settings", href: "/settings", icon: Settings },
 ]
 
 const bottomNavItems: NavItem[] = [
