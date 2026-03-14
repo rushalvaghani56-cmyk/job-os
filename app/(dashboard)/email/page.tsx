@@ -31,6 +31,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import {
   Mail,
@@ -64,6 +65,8 @@ type TemplateCategory =
   | "counter-offer"
   | "accept-offer"
 
+type Sentiment = "positive" | "neutral" | "negative"
+
 interface DetectedEmail {
   id: string
   date: Date
@@ -76,6 +79,7 @@ interface DetectedEmail {
   applicationTitle: string
   company: string
   autoAction?: string
+  sentiment?: Sentiment
   extractedData?: {
     interviewDate?: Date
     platform?: string
@@ -154,6 +158,8 @@ const mockDetectedEmails: DetectedEmail[] = [
     applicationId: "app_003",
     applicationTitle: "Product Engineer",
     company: "Linear",
+    sentiment: "positive",
+    autoAction: "Follow-up sequence stopped",
   },
   {
     id: "email_004",
@@ -214,6 +220,35 @@ const mockDetectedEmails: DetectedEmail[] = [
     applicationId: "",
     applicationTitle: "",
     company: "Anthropic",
+    sentiment: "positive",
+  },
+  {
+    id: "email_009",
+    date: new Date(2026, 2, 10, 10, 30),
+    from: "talent@datadog.com",
+    subject: "Re: Engineering Opportunities",
+    snippet:
+      "Thank you for your interest. Unfortunately, we don't have any openings that match your profile at this time. We will keep your resume on file...",
+    category: "recruiter",
+    confidence: 85,
+    applicationId: "",
+    applicationTitle: "",
+    company: "Datadog",
+    sentiment: "negative",
+  },
+  {
+    id: "email_010",
+    date: new Date(2026, 2, 9, 14, 0),
+    from: "hr@cloudflare.com",
+    subject: "Following up on your application",
+    snippet:
+      "We received your application and are currently reviewing candidates. We'll be in touch soon with next steps...",
+    category: "recruiter",
+    confidence: 78,
+    applicationId: "app_010",
+    applicationTitle: "Systems Engineer",
+    company: "Cloudflare",
+    sentiment: "neutral",
   },
   {
     id: "email_008",
@@ -380,6 +415,64 @@ const mockOutboxEmails: OutboxEmail[] = [
     applicationTitle: "Senior Software Engineer",
     company: "Notion",
   },
+  {
+    id: "out_006",
+    recipient: "Jessica Wu",
+    recipientEmail: "jessica.wu@figma.com",
+    subject: "Thank you for the conversation - Design Engineer at Figma",
+    body: "Hi Jessica,\n\nThank you for taking the time to speak with me about the Design Engineer role...",
+    status: "delivered",
+    sentDate: new Date(2026, 2, 11, 11, 30),
+    applicationId: "app_005",
+    applicationTitle: "Design Engineer",
+    company: "Figma",
+  },
+  {
+    id: "out_007",
+    recipient: "David Park",
+    recipientEmail: "david.p@coinbase.com",
+    subject: "Referral Request - Senior Backend Engineer at Coinbase",
+    body: "Hi David,\n\nI hope you're doing well! I saw your work on Coinbase's trading infrastructure...",
+    status: "opened",
+    sentDate: new Date(2026, 2, 10, 9, 15),
+    openedDate: new Date(2026, 2, 10, 14, 30),
+    applicationId: "app_007",
+    applicationTitle: "Senior Backend Engineer",
+    company: "Coinbase",
+  },
+  {
+    id: "out_008",
+    recipient: "Maria Santos",
+    recipientEmail: "maria@ramp.com",
+    subject: "Following up on our conversation",
+    body: "Hi Maria,\n\nI wanted to follow up on our conversation last week about the Full Stack role...",
+    status: "replied",
+    sentDate: new Date(2026, 2, 9, 16, 0),
+    openedDate: new Date(2026, 2, 9, 17, 15),
+    repliedDate: new Date(2026, 2, 10, 10, 30),
+    applicationId: "app_008",
+    applicationTitle: "Full Stack Engineer",
+    company: "Ramp",
+  },
+  {
+    id: "out_009",
+    recipient: "Kevin Lee",
+    recipientEmail: "kevin.lee@plaid.com",
+    subject: "Introduction - Software Engineer opportunity",
+    body: "Hi Kevin,\n\nI'm reaching out because I'm very interested in Plaid's mission of democratizing financial services...",
+    status: "sent",
+    sentDate: new Date(2026, 2, 14, 10, 0),
+  },
+  {
+    id: "out_010",
+    recipient: "Rachel Kim",
+    recipientEmail: "rachel.k@databricks.com",
+    subject: "Thank you - Data Engineering Interview",
+    body: "Dear Rachel,\n\nThank you for the opportunity to interview for the Data Engineering position...",
+    status: "opened",
+    sentDate: new Date(2026, 2, 8, 15, 30),
+    openedDate: new Date(2026, 2, 8, 18, 45),
+  },
 ]
 
 // Helper functions
@@ -456,8 +549,37 @@ function getConfidenceBadgeColor(confidence: number) {
   return "bg-warning/10 text-warning-foreground border-warning/20"
 }
 
+function getSentimentBadge(sentiment: Sentiment | undefined) {
+  switch (sentiment) {
+    case "positive":
+      return { label: "Positive", className: "bg-success/10 text-success border-success/20" }
+    case "negative":
+      return { label: "Negative", className: "bg-destructive/10 text-destructive border-destructive/20" }
+    case "neutral":
+    default:
+      return { label: "Neutral", className: "bg-muted text-muted-foreground" }
+  }
+}
+
+function getCategoryBorderColor(category: EmailCategory) {
+  switch (category) {
+    case "rejections":
+      return "border-l-4 border-l-destructive"
+    case "interviews":
+      return "border-l-4 border-l-primary"
+    case "recruiter":
+      return "border-l-4 border-l-success"
+    case "confirmations":
+      return "border-l-4 border-l-muted-foreground"
+    default:
+      return ""
+  }
+}
+
 export default function EmailPage() {
+  const { toast } = useToast()
   const [isConnected, setIsConnected] = useState(true)
+  const [isConnecting, setIsConnecting] = useState(false)
   const [selectedEmail, setSelectedEmail] = useState<DetectedEmail | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(
     null
@@ -466,6 +588,36 @@ export default function EmailPage() {
   const [activeCategory, setActiveCategory] =
     useState<EmailCategory>("rejections")
   const [showCreateTemplate, setShowCreateTemplate] = useState(false)
+
+  const handleConnectGmail = () => {
+    setIsConnecting(true)
+    setTimeout(() => {
+      setIsConnecting(false)
+      setIsConnected(true)
+      toast({
+        title: "Gmail connected",
+        description: "Your Gmail account has been successfully connected.",
+      })
+    }, 2000)
+  }
+
+  const handleCopyTemplate = () => {
+    if (selectedTemplate) {
+      navigator.clipboard.writeText(selectedTemplate.body)
+      toast({
+        title: "Copied to clipboard",
+        description: "Template content has been copied.",
+      })
+    }
+  }
+
+  const handleSendViaGmail = () => {
+    toast({
+      title: "Opening Gmail",
+      description: "Redirecting to Gmail compose...",
+    })
+    setSelectedTemplate(null)
+  }
 
   const categoryEmails = getCategoryEmails(mockDetectedEmails, activeCategory)
 
@@ -495,11 +647,21 @@ export default function EmailPage() {
           </div>
           {!isConnected && (
             <Button
-              onClick={() => setIsConnected(true)}
+              onClick={handleConnectGmail}
+              disabled={isConnecting}
               className="rounded-lg gap-2"
             >
-              <Mail className="size-4" />
-              Connect Gmail
+              {isConnecting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Mail className="size-4" />
+                  Connect Gmail
+                </>
+              )}
             </Button>
           )}
         </div>

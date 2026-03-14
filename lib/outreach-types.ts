@@ -130,6 +130,101 @@ export const mockContacts: Contact[] = [
     lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 4),
     email: "anna.schmidt@cloudflare.com",
   },
+  {
+    id: "8",
+    name: "Kevin Patel",
+    title: "Staff Software Engineer",
+    company: "Airbnb",
+    warmth: "hot",
+    channels: ["linkedin-dm", "email"],
+    status: "replied",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 6),
+    linkedinUrl: "https://linkedin.com/in/kevinpatel",
+    email: "kevin.p@airbnb.com",
+    nextFollowUp: new Date(Date.now() + 1000 * 60 * 60 * 24),
+  },
+  {
+    id: "9",
+    name: "Rachel Green",
+    title: "Tech Lead",
+    company: "Shopify",
+    warmth: "warm",
+    channels: ["inmail"],
+    status: "opened",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 8),
+    linkedinUrl: "https://linkedin.com/in/rachelgreen",
+    nextFollowUp: new Date(Date.now() + 1000 * 60 * 60 * 48),
+  },
+  {
+    id: "10",
+    name: "Marcus Johnson",
+    title: "Engineering Director",
+    company: "Coinbase",
+    warmth: "cold",
+    channels: ["linkedin-dm"],
+    status: "sent",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
+    linkedinUrl: "https://linkedin.com/in/marcusjohnson",
+  },
+  {
+    id: "11",
+    name: "Sophie Williams",
+    title: "Senior Recruiter",
+    company: "Meta",
+    warmth: "hot",
+    channels: ["email", "inmail"],
+    status: "replied",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 20),
+    email: "sophie.w@meta.com",
+    linkedinUrl: "https://linkedin.com/in/sophiewilliams",
+    nextFollowUp: new Date(Date.now() + 1000 * 60 * 60 * 2),
+  },
+  {
+    id: "12",
+    name: "Tom Anderson",
+    title: "VP of Product",
+    company: "Plaid",
+    warmth: "warm",
+    channels: ["linkedin-dm"],
+    status: "queued",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 36),
+    linkedinUrl: "https://linkedin.com/in/tomanderson",
+  },
+  {
+    id: "13",
+    name: "Jennifer Lee",
+    title: "Principal Engineer",
+    company: "Databricks",
+    warmth: "cold",
+    channels: ["email"],
+    status: "no-response",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 96),
+    email: "jennifer.lee@databricks.com",
+  },
+  {
+    id: "14",
+    name: "Chris Martinez",
+    title: "Head of Engineering",
+    company: "Ramp",
+    warmth: "hot",
+    channels: ["linkedin-dm", "email"],
+    status: "opened",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    linkedinUrl: "https://linkedin.com/in/chrismartinez",
+    email: "chris@ramp.com",
+  },
+  {
+    id: "15",
+    name: "Priya Sharma",
+    title: "Technical Recruiter",
+    company: "OpenAI",
+    warmth: "warm",
+    channels: ["inmail", "email"],
+    status: "sent",
+    lastActivityAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    linkedinUrl: "https://linkedin.com/in/priyasharma",
+    email: "priya@openai.com",
+  },
 ]
 
 export const mockMessages: Message[] = [
@@ -181,9 +276,61 @@ export const mockMessages: Message[] = [
 ]
 
 export const mockStats: OutreachStats = {
-  sent: 47,
+  sent: 87,
   openRate: 68,
-  replyRate: 32,
+  replyRate: 31,
   bestTemplate: "Referral Intro",
   bestTiming: "Tue 9-11am",
 }
+
+// Additional stats for spec compliance
+export interface OutreachSummaryStats {
+  totalContacts: number
+  messagesSent: number
+  responseRate: number
+  followUpsDueToday: number
+}
+
+export const mockSummaryStats: OutreachSummaryStats = {
+  totalContacts: 42,
+  messagesSent: 87,
+  responseRate: 31,
+  followUpsDueToday: 3,
+}
+
+// Prospecting mock data
+export interface ProspectedContact {
+  id: string
+  name: string
+  title: string
+  company: string
+  linkedinUrl: string
+  mutualConnections: number
+}
+
+export const mockProspectedContacts: ProspectedContact[] = [
+  {
+    id: "prospect_1",
+    name: "Alex Turner",
+    title: "Senior Engineering Manager",
+    company: "Stripe",
+    linkedinUrl: "https://linkedin.com/in/alexturner",
+    mutualConnections: 12,
+  },
+  {
+    id: "prospect_2",
+    name: "Maria Garcia",
+    title: "Staff Engineer",
+    company: "Stripe",
+    linkedinUrl: "https://linkedin.com/in/mariagarcia",
+    mutualConnections: 5,
+  },
+  {
+    id: "prospect_3",
+    name: "Daniel Kim",
+    title: "Technical Recruiter",
+    company: "Stripe",
+    linkedinUrl: "https://linkedin.com/in/danielkim",
+    mutualConnections: 8,
+  },
+]
