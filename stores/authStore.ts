@@ -15,6 +15,7 @@ interface AuthState {
   refreshToken: () => Promise<void>;
   setUser: (user: User | null) => void;
   setOnboardingComplete: (complete: boolean) => void;
+  toggleAdminRole: () => void;
 }
 
 const mockUser: User = {
@@ -119,7 +120,7 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      setOnboardingComplete: (complete: boolean) => {
+setOnboardingComplete: (complete: boolean) => {
         const { user } = get();
         if (user) {
           set({
@@ -128,6 +129,17 @@ export const useAuthStore = create<AuthState>()(
           });
         }
       },
+
+      toggleAdminRole: () => {
+        const { user } = get();
+        if (user) {
+          const newRole = user.role === "super_admin" ? "user" : "super_admin";
+          set({
+            user: { ...user, role: newRole },
+          });
+        }
+      },
+    },
     }),
     {
       name: "auth-storage",

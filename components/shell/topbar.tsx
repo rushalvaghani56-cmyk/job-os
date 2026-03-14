@@ -16,6 +16,8 @@ import {
   Plus,
   Check,
   Menu,
+  Shield,
+  ShieldOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -37,6 +39,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useShell } from "./shell-context"
+import { useAuthStore } from "@/stores/authStore"
 
 interface Profile {
   id: string
@@ -70,8 +73,10 @@ const mockNotifications: Notification[] = [
 export function Topbar() {
   const { theme, setTheme } = useTheme()
   const { sidebarCollapsed, toggleCopilot, copilotOpen, setMobileMenuOpen, setCommandPaletteOpen } = useShell()
+  const { user, toggleAdminRole, logout } = useAuthStore()
   const [activeProfile, setActiveProfile] = React.useState(mockProfiles[0])
   const unreadCount = mockNotifications.filter((n) => !n.read).length
+  const isAdmin = user?.role === "super_admin"
 
   return (
     <header
@@ -254,11 +259,11 @@ export function Topbar() {
               <span className="sr-only">User menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>John Doe</span>
-                <span className="text-xs font-normal text-muted-foreground">john@example.com</span>
+                <span>{user?.name || "John Doe"}</span>
+                <span className="text-xs font-normal text-muted-foreground">{user?.email || "john@example.com"}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -274,8 +279,30 @@ export function Topbar() {
                 Activity Log
               </Link>
             </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem asChild>
+                <Link href="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Panel
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem onClick={toggleAdminRole} className="gap-2">
+              {isAdmin ? (
+                <>
+                  <ShieldOff className="mr-2 h-4 w-4 text-amber-500" />
+                  <span>Disable Admin Mode</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="mr-2 h-4 w-4 text-primary" />
+                  <span>Enable Admin Mode</span>
+                </>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </DropdownMenuItem>

@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useShell } from "./shell-context"
 import { ProfileSwitcher } from "./profile-switcher"
+import { useAuthStore } from "@/stores/authStore"
 
 interface NavItem {
   label: string
@@ -67,9 +68,6 @@ const bottomNavItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
   { label: "Admin Panel", href: "/admin", icon: Shield },
 ]
-
-// Mock: In production, this would come from auth context
-const isOwner = true
 
 function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const pathname = usePathname()
@@ -142,6 +140,8 @@ function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boole
 
 export function SidebarNav() {
   const { sidebarCollapsed, toggleSidebar } = useShell()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === "super_admin"
   const hasWhatsNewDot = true // Mock: would come from API
 
   return (
@@ -216,8 +216,8 @@ export function SidebarNav() {
           ))}
         </div>
 
-        {/* Admin Section - Only visible to owners */}
-        {isOwner && (
+        {/* Admin Section - Only visible to admins */}
+        {isAdmin && (
           <>
             <div className="my-4 border-t" />
             <div className="space-y-1">
