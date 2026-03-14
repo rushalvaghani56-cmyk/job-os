@@ -179,7 +179,7 @@ export function Topbar() {
               <span className="sr-only">Notifications</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 p-0">
+          <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] p-0">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h4 className="font-semibold">Notifications</h4>
               {unreadCount > 0 && (
@@ -243,8 +243,8 @@ export function Topbar() {
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="min-h-[44px] min-w-[44px]"
         >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform duration-300 dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform duration-300 dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Toggle theme</span>
         </Button>
 

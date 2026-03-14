@@ -236,7 +236,7 @@ export default function OnboardingStep5() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             {providers.map((provider) => {
               const keyData = apiKeys[provider.id]
               const isValid = keyData.valid === true

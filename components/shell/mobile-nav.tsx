@@ -68,7 +68,7 @@ export function MobileNav() {
   return (
     <>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-surface md:hidden">
+      <nav className="fixed bottom-0 inset-x-0 z-40 border-t bg-surface md:hidden pb-[env(safe-area-inset-bottom)]">
         <div className="flex h-16 items-center justify-around">
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -109,7 +109,7 @@ export function MobileNav() {
           <SheetHeader className="text-left">
             <SheetTitle>More</SheetTitle>
           </SheetHeader>
-          <div className="mt-4 grid grid-cols-3 gap-4">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
             {moreNavItems.map((item) => {
               const isActive = pathname === item.href
               return (

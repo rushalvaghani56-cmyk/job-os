@@ -176,7 +176,7 @@ export function ActionRequiredPanel({ isLoading = false }: ActionRequiredPanelPr
           return (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+              className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-all duration-200 cursor-pointer"
               onClick={() => window.location.href = item.actionHref}
             >
               <PriorityTag priority={item.priority} />

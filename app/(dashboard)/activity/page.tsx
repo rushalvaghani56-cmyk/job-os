@@ -1097,7 +1097,7 @@ export default function ActivityPage() {
           value={actorFilter}
           onValueChange={(v) => setActorFilter(v as Actor | "all")}
         >
-          <SelectTrigger className="w-[130px] focus-visible:ring-2 focus-visible:ring-primary">
+          <SelectTrigger className="w-auto min-w-[100px] sm:w-[130px] focus-visible:ring-2 focus-visible:ring-primary">
             <SelectValue placeholder="Actor" />
           </SelectTrigger>
           <SelectContent>
@@ -1110,7 +1110,7 @@ export default function ActivityPage() {
 
         {/* Action Type Filter */}
         <Select value={actionTypeFilter} onValueChange={setActionTypeFilter}>
-          <SelectTrigger className="w-[160px] focus-visible:ring-2 focus-visible:ring-primary">
+          <SelectTrigger className="w-auto min-w-[100px] sm:w-[160px] focus-visible:ring-2 focus-visible:ring-primary">
             <SelectValue placeholder="Action type" />
           </SelectTrigger>
           <SelectContent>
@@ -1124,7 +1124,7 @@ export default function ActivityPage() {
 
         {/* Profile Filter */}
         <Select value={profileFilter} onValueChange={setProfileFilter}>
-          <SelectTrigger className="w-[160px] focus-visible:ring-2 focus-visible:ring-primary">
+          <SelectTrigger className="w-auto min-w-[100px] sm:w-[160px] focus-visible:ring-2 focus-visible:ring-primary">
             <SelectValue placeholder="Profile" />
           </SelectTrigger>
           <SelectContent>
@@ -1138,7 +1138,7 @@ export default function ActivityPage() {
 
         {/* Entity Type Filter */}
         <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
-          <SelectTrigger className="w-[140px] focus-visible:ring-2 focus-visible:ring-primary">
+          <SelectTrigger className="w-auto min-w-[100px] sm:w-[140px] focus-visible:ring-2 focus-visible:ring-primary">
             <SelectValue placeholder="Entity type" />
           </SelectTrigger>
           <SelectContent>
