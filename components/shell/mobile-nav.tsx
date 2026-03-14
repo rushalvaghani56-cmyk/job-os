@@ -53,7 +53,7 @@ const moreNavItems: NavItem[] = [
   { label: "Market Intel", href: "/market", icon: TrendingUp },
   { label: "Interviews", href: "/interviews", icon: Calendar, badge: 3 },
   { label: "Profiles", href: "/profiles", icon: Users },
-  { label: "Files", href: "/documents", icon: Folder },
+  { label: "Files", href: "/files", icon: Folder },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Activity Log", href: "/activity", icon: ScrollText },
   { label: "Notifications", href: "/notifications", icon: Bell, badge: 4 },

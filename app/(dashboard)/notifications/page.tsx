@@ -380,24 +380,25 @@ const priorityColors: Record<Priority, string> = {
   low: "bg-muted text-muted-foreground border-border",
 }
 
-const iconColors: Record<NotificationType, string> = {
-  dream_company_match: "text-violet-500",
-  high_score_job: "text-emerald-500",
-  content_ready: "text-indigo-500",
-  application_submitted: "text-green-500",
-  application_failed: "text-red-500",
-  interview_detected: "text-green-500",
-  rejection_detected: "text-red-500",
-  ghost_detected: "text-slate-400",
-  follow_up_due: "text-amber-500",
-  api_key_warning: "text-red-500",
-  captcha_intervention: "text-amber-500",
-  weekly_report: "text-blue-500",
-  discovery_complete: "text-blue-500",
-  copilot_insight: "text-violet-500",
-  offer_received: "text-emerald-500",
-  response_received: "text-blue-500",
-  prep_ready: "text-green-500",
+// Icon background and text colors for each notification type (32px circle)
+const iconStyles: Record<NotificationType, { bg: string; text: string }> = {
+  dream_company_match: { bg: "bg-violet-500/10", text: "text-violet-500" },
+  high_score_job: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  content_ready: { bg: "bg-primary/10", text: "text-primary" },
+  application_submitted: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
+  application_failed: { bg: "bg-red-500/10", text: "text-red-500" },
+  interview_detected: { bg: "bg-teal-500/10", text: "text-teal-500" },
+  rejection_detected: { bg: "bg-slate-500/10", text: "text-slate-500" },
+  ghost_detected: { bg: "bg-slate-400/10", text: "text-slate-400" },
+  follow_up_due: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  api_key_warning: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  captcha_intervention: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  weekly_report: { bg: "bg-primary/10", text: "text-primary" },
+  discovery_complete: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  copilot_insight: { bg: "bg-secondary/10", text: "text-secondary-foreground" },
+  offer_received: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
+  response_received: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  prep_ready: { bg: "bg-green-500/10", text: "text-green-500" },
 }
 
 function formatTimeAgo(date: Date): string {
@@ -416,18 +417,19 @@ function formatTimeAgo(date: Date): string {
 
 function NotificationCard({ notification, onMarkRead }: { notification: Notification; onMarkRead: (id: string) => void }) {
   const Icon = notificationIcons[notification.type]
+  const styles = iconStyles[notification.type]
 
   const content = (
     <div
       className={cn(
-        "flex gap-3 p-3 rounded-xl border cursor-pointer hover:bg-surface transition-colors",
-        !notification.read && "border-primary/30 bg-primary/5",
+        "flex gap-3 p-3 rounded-xl border cursor-pointer hover:bg-surface-raised transition-colors",
+        !notification.read && "border-primary/30 bg-primary/5 border-l-2 border-l-primary",
         notification.read && "border-border"
       )}
       onClick={() => onMarkRead(notification.id)}
     >
-      <div className={cn("mt-0.5", iconColors[notification.type])}>
-        <Icon className="h-5 w-5" />
+      <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", styles.bg)}>
+        <Icon className={cn("size-4", styles.text)} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">

@@ -1,9 +1,17 @@
+"use client"
+
+import { useState } from "react"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Briefcase,
   FileSearch,
   Send,
   TrendingUp,
+  Sparkles,
+  X,
+  ArrowRight,
 } from "lucide-react"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { ActionRequiredPanel } from "@/components/dashboard/action-required-panel"
@@ -55,9 +63,56 @@ const stats = [
   },
 ]
 
+// Mock: In production, this would come from user preferences/API
+const UNREAD_CHANGELOG_COUNT = 3
+
+function ChangelogBanner({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="relative flex items-center justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="size-4 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">
+            {UNREAD_CHANGELOG_COUNT} new updates!
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Interview Calendar, Market Intelligence, and more
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button asChild size="sm" variant="outline" className="gap-1.5">
+          <Link href="/changelog">
+            See What's New
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8 text-muted-foreground hover:text-foreground"
+          onClick={onDismiss}
+        >
+          <X className="size-4" />
+          <span className="sr-only">Dismiss</span>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
+  const [showChangelogBanner, setShowChangelogBanner] = useState(true)
+  
   return (
     <div className="space-y-6">
+      {/* Changelog Banner */}
+      {showChangelogBanner && UNREAD_CHANGELOG_COUNT > 0 && (
+        <ChangelogBanner onDismiss={() => setShowChangelogBanner(false)} />
+      )}
+      
       {/* Header */}
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Dashboard</h1>

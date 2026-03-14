@@ -53,7 +53,7 @@ const mainNavItems: NavItem[] = [
 
 const secondaryNavItems: NavItem[] = [
   { label: "Profiles", href: "/profiles", icon: Users },
-  { label: "Documents", href: "/documents", icon: Folder },
+  { label: "Files", href: "/files", icon: Folder },
   { label: "Notifications", href: "/notifications", icon: Bell, badge: 5, badgeColor: "red" },
   { label: "Activity Log", href: "/activity", icon: ScrollText },
   { label: "Settings", href: "/settings", icon: Settings },
