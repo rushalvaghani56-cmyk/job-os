@@ -18,8 +18,38 @@ import {
   AreaChart,
 } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { Skeleton } from "@/components/ui/skeleton"
 import { dailySpending, taskSpending, aiCostStats } from "./mock-data"
 import { DollarSign, TrendingUp, FileText, Zap } from "lucide-react"
+
+function AICostSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-xl border bg-card p-4">
+            <Skeleton className="mb-2 h-4 w-20" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border bg-card p-5">
+        <Skeleton className="mb-4 h-5 w-32" />
+        <Skeleton className="h-[300px] w-full" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border bg-card p-5">
+          <Skeleton className="mb-4 h-5 w-36" />
+          <Skeleton className="h-[250px] w-full" />
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <Skeleton className="mb-4 h-5 w-32" />
+          <Skeleton className="h-[250px] w-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const lineChartConfig: ChartConfig = {
   total: {
@@ -45,12 +75,22 @@ const stackedBarConfig: ChartConfig = {
 
 export function TabAICost() {
   const [activeTaskIndex, setActiveTaskIndex] = React.useState<number | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  // Format date for x-axis
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 650)
+    return () => clearTimeout(timer)
+  }, [])
+
+// Format date for x-axis
   const formattedSpending = dailySpending.map(d => ({
     ...d,
-    displayDate: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    dateFormatted: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }))
+
+  if (isLoading) {
+    return <AICostSkeleton />
+  }
 
   return (
     <div className="space-y-6">

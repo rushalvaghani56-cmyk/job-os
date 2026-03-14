@@ -35,6 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Calendar, Filter } from "lucide-react"
 import {
   TrendingUp,
@@ -429,14 +430,47 @@ function CompetitionBadge({ level }: { level: "low" | "medium" | "high" | "very-
 
 // ==================== MAIN PAGE ====================
 
+function MarketSkeleton() {
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="mt-1 h-4 w-64" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-9 w-36" />
+        </div>
+      </div>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Card key={i} className="rounded-xl">
+          <CardHeader className="pb-4">
+            <Skeleton className="h-5 w-40" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[250px] w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 export default function MarketIntelligencePage() {
   const [dateRange, setDateRange] = React.useState("30d")
   const [profile, setProfile] = React.useState("all")
   const [roleFilter, setRoleFilter] = React.useState("all")
   const [locationFilter, setLocationFilter] = React.useState("all")
+  const [isLoading, setIsLoading] = React.useState(true)
   const [dreamCompanies, setDreamCompanies] = React.useState<string[]>(
     hotCompanies.filter((c) => c.isDream).map((c) => c.name)
   )
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 700)
+    return () => clearTimeout(timer)
+  }, [])
 
   const toggleDream = (companyName: string) => {
     setDreamCompanies((prev) =>
@@ -444,6 +478,10 @@ export default function MarketIntelligencePage() {
         ? prev.filter((n) => n !== companyName)
         : [...prev, companyName]
     )
+  }
+
+  if (isLoading) {
+    return <MarketSkeleton />
   }
 
   return (

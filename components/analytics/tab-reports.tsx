@@ -40,6 +40,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
+
+function ReportsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="mt-1 h-4 w-72" />
+        </div>
+        <Skeleton className="h-9 w-32" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border bg-card p-5">
+            <Skeleton className="mb-4 h-10 w-10 rounded-lg" />
+            <Skeleton className="mb-2 h-5 w-32" />
+            <Skeleton className="mb-4 h-4 w-full" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const typeConfig = {
   weekly: {
@@ -57,10 +83,74 @@ const typeConfig = {
 }
 
 export function TabReports() {
+  const { toast } = useToast()
   const [createReportOpen, setCreateReportOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 550)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleExport = (format: string) => {
+    toast({
+      title: `Exporting as ${format}`,
+      description: `Your ${format} report is being generated and will download shortly.`,
+    })
+  }
+
+  if (isLoading) {
+    return <ReportsSkeleton />
+  }
 
   return (
     <div className="space-y-6">
+      {/* Weekly Report Summary Card */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex-1">
+            <h3 className="mb-1 text-base font-semibold">Week of March 7-13, 2026</h3>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div>
+                <p className="text-2xl font-bold text-foreground">23</p>
+                <p className="text-xs text-muted-foreground">Applied</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">3</p>
+                <p className="text-xs text-muted-foreground">Interviews</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">67%</p>
+                <p className="text-xs text-muted-foreground">ATS Pass Rate</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">$4.20</p>
+                <p className="text-xs text-muted-foreground">AI Cost</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-1.5">
+              <p className="text-sm">
+                <span className="font-medium text-primary">Highlight:</span>{" "}
+                Best match: Stripe Platform Engineer (91)
+              </p>
+              <p className="text-sm">
+                <span className="font-medium text-primary">Upcoming:</span>{" "}
+                Interview at Meta on March 15
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={() => handleExport("PDF")}
+          >
+            <Download className="h-4 w-4" />
+            Export as PDF
+          </Button>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -224,15 +314,30 @@ export function TabReports() {
           Export your analytics data in various formats
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="rounded-lg gap-1 focus-visible:ring-2 focus-visible:ring-primary">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-lg gap-1 focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={() => handleExport("CSV")}
+          >
             <Download className="h-4 w-4" />
             Export CSV
           </Button>
-          <Button variant="outline" size="sm" className="rounded-lg gap-1 focus-visible:ring-2 focus-visible:ring-primary">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-lg gap-1 focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={() => handleExport("PDF")}
+          >
             <Download className="h-4 w-4" />
             Export PDF
           </Button>
-          <Button variant="outline" size="sm" className="rounded-lg gap-1 focus-visible:ring-2 focus-visible:ring-primary">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-lg gap-1 focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={() => handleExport("JSON")}
+          >
             <Download className="h-4 w-4" />
             Export JSON
           </Button>

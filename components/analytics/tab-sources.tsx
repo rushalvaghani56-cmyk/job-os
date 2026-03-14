@@ -20,7 +20,27 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { Skeleton } from "@/components/ui/skeleton"
 import { sourceData } from "./mock-data"
+
+function SourcesSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border bg-card p-5">
+        <Skeleton className="mb-4 h-5 w-40" />
+        <Skeleton className="h-[350px] w-full" />
+      </div>
+      <div className="rounded-xl border bg-card p-4">
+        <Skeleton className="mb-4 h-5 w-32" />
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const chartConfig: ChartConfig = {
   jobsFound: {
@@ -42,6 +62,17 @@ const chartConfig: ChartConfig = {
 }
 
 export function TabSources() {
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 600)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <SourcesSkeleton />
+  }
+
   return (
     <div className="space-y-6">
       {/* Grouped Bar Chart */}

@@ -2,7 +2,28 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 import { timingData } from "./mock-data"
+
+function TimingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border bg-card p-5">
+        <Skeleton className="mb-1 h-5 w-40" />
+        <Skeleton className="mb-4 h-4 w-72" />
+        <Skeleton className="h-[360px] w-full" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border bg-card p-4">
+            <Skeleton className="mb-2 h-4 w-24" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 const hours = Array.from({ length: 12 }, (_, i) => i + 8) // 8am to 7pm
@@ -51,6 +72,12 @@ function getColorForValue(value: number) {
 
 export function TabTiming() {
   const [selectedCell, setSelectedCell] = React.useState<{ day: string; hour: number } | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 600)
+    return () => clearTimeout(timer)
+  }, [])
   
   const selectedData = selectedCell 
     ? heatmapData.find(d => d.day === selectedCell.day && d.hour === selectedCell.hour)
@@ -58,6 +85,10 @@ export function TabTiming() {
 
   // Find best times
   const sortedByValue = [...heatmapData].sort((a, b) => b.value - a.value)
+  
+  if (isLoading) {
+    return <TimingSkeleton />
+  }
   const bestTimes = sortedByValue.slice(0, 5)
   const worstTimes = sortedByValue.slice(-5).reverse()
 
