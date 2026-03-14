@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/components/ui/use-toast"
 
 // Types
 type Actor = "system" | "user" | "ai"
@@ -994,6 +995,8 @@ export default function ActivityPage() {
     dateRange,
   ])
 
+  const { toast } = useToast()
+  
   const handleExportCSV = () => {
     const headers = ["Timestamp", "Action", "Actor", "Entity Type", "Entity ID", "Detail"]
     const rows = filteredLogs.map((log) => [
@@ -1017,6 +1020,11 @@ export default function ActivityPage() {
     a.download = `activity-log-${format(new Date(), "yyyy-MM-dd")}.csv`
     a.click()
     URL.revokeObjectURL(url)
+    
+    toast({
+      title: "Export complete",
+      description: `Exported ${filteredLogs.length} activity log entries to CSV`,
+    })
   }
 
   return (

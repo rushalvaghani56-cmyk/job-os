@@ -60,7 +60,7 @@ const secondaryNavItems: NavItem[] = [
 ]
 
 const bottomNavItems: NavItem[] = [
-  { label: "What's New", href: "/changelog", icon: Sparkles },
+  { label: "What's New", href: "/changelog", icon: Sparkles, badge: 3, badgeColor: "blue" },
 ]
 
 // Admin-only nav items (only visible to owners)
