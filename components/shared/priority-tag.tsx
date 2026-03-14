@@ -39,7 +39,9 @@ const priorityConfig = {
  * Dream (purple + star), High (orange), Medium (gray)
  */
 export function PriorityTag({ priority, className }: PriorityTagProps) {
-  const config = priorityConfig[priority];
+  // Fallback to Medium (3) if priority is invalid
+  const validPriority = priority in priorityConfig ? priority : 3;
+  const config = priorityConfig[validPriority];
 
   return (
     <span
