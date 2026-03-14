@@ -18,9 +18,21 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import Link from "next/link"
+import { PlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   APPLICATION_COLUMNS,
   type Application,
@@ -34,6 +46,11 @@ interface KanbanViewProps {
 
 export function KanbanView({ applications, onStatusChange }: KanbanViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [pendingChange, setPendingChange] = useState<{
+    applicationId: string
+    newStatus: ApplicationStatus
+    application: Application
+  } | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -55,65 +72,133 @@ export function KanbanView({ applications, onStatusChange }: KanbanViewProps) {
 
     const applicationId = active.id as string
     const overId = over.id as string
+    const application = applications.find((app) => app.id === applicationId)
+
+    if (!application) return
 
     // Check if dropped on a column
     const isColumn = APPLICATION_COLUMNS.some((col) => col.id === overId)
+    let targetStatus: ApplicationStatus | null = null
+
     if (isColumn) {
-      onStatusChange(applicationId, overId as ApplicationStatus)
-      return
+      targetStatus = overId as ApplicationStatus
+    } else {
+      // Check if dropped on another card - get that card's status
+      const overApplication = applications.find((app) => app.id === overId)
+      if (overApplication) {
+        targetStatus = overApplication.status
+      }
     }
 
-    // Check if dropped on another card - get that card's status
-    const overApplication = applications.find((app) => app.id === overId)
-    if (overApplication) {
-      onStatusChange(applicationId, overApplication.status)
+    if (!targetStatus || targetStatus === application.status) return
+
+    // Show confirmation for moves to Rejected or Withdrawn
+    if (targetStatus === "rejected" || targetStatus === "withdrawn") {
+      setPendingChange({
+        applicationId,
+        newStatus: targetStatus,
+        application,
+      })
+    } else {
+      onStatusChange(applicationId, targetStatus)
     }
+  }
+
+  const handleConfirmChange = () => {
+    if (pendingChange) {
+      onStatusChange(pendingChange.applicationId, pendingChange.newStatus)
+      setPendingChange(null)
+    }
+  }
+
+  const handleCancelChange = () => {
+    setPendingChange(null)
   }
 
   const activeApplication = activeId
     ? applications.find((app) => app.id === activeId)
     : null
 
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <ScrollArea className="h-full w-full">
-        <div className="flex gap-4 p-4 pb-6">
-          {APPLICATION_COLUMNS.map((column) => {
-            const columnApps = applications.filter(
-              (app) => app.status === column.id
-            )
-            return (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                applications={columnApps}
-              />
-            )
-          })}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+  // Calculate average days in stage for each column
+  const getColumnStats = (status: ApplicationStatus) => {
+    const columnApps = applications.filter((app) => app.status === status)
+    if (columnApps.length === 0) return null
+    const avgDays = Math.round(
+      columnApps.reduce((sum, app) => sum + app.daysInStage, 0) / columnApps.length
+    )
+    return avgDays
+  }
 
-      <DragOverlay>
-        {activeApplication && (
-          <ApplicationCard application={activeApplication} isDragging />
-        )}
-      </DragOverlay>
-    </DndContext>
+  return (
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <ScrollArea className="h-full w-full">
+          <div className="flex gap-4 p-4 pb-6">
+            {APPLICATION_COLUMNS.map((column) => {
+              const columnApps = applications.filter(
+                (app) => app.status === column.id
+              )
+              const avgDays = getColumnStats(column.id)
+              return (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  applications={columnApps}
+                  avgDays={avgDays}
+                />
+              )
+            })}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+
+        <DragOverlay>
+          {activeApplication && (
+            <ApplicationCard application={activeApplication} isDragging />
+          )}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Confirmation Dialog for Rejected/Withdrawn */}
+      <AlertDialog open={!!pendingChange} onOpenChange={() => setPendingChange(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Move to {pendingChange?.newStatus === "rejected" ? "Rejected" : "Withdrawn"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to move &quot;{pendingChange?.application.jobTitle}&quot; at{" "}
+              {pendingChange?.application.company.name} to{" "}
+              {pendingChange?.newStatus === "rejected" ? "Rejected" : "Withdrawn"}? You can undo this action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelChange}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmChange}
+              className={pendingChange?.newStatus === "rejected" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              {pendingChange?.newStatus === "rejected" ? "Mark as Rejected" : "Mark as Withdrawn"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
 interface KanbanColumnProps {
   column: (typeof APPLICATION_COLUMNS)[number]
   applications: Application[]
+  avgDays: number | null
 }
 
-function KanbanColumn({ column, applications }: KanbanColumnProps) {
+function KanbanColumn({ column, applications, avgDays }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useSortable({
     id: column.id,
     data: { type: "column" },
@@ -124,18 +209,35 @@ function KanbanColumn({ column, applications }: KanbanColumnProps) {
       ref={setNodeRef}
       className={cn(
         "flex w-[280px] shrink-0 flex-col rounded-xl bg-muted/30 transition-colors",
-        isOver && "ring-2 ring-primary ring-dashed"
+        isOver && "bg-primary/10 ring-2 ring-primary ring-dashed"
       )}
     >
       {/* Column Header */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
-        <div className={cn("size-2 rounded-full", column.color)} />
-        <span className="text-sm font-medium text-foreground">
-          {column.label}
-        </span>
-        <Badge variant="secondary" className="ml-auto font-mono text-xs">
-          {applications.length}
-        </Badge>
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <div className={cn("size-2 rounded-full", column.color)} />
+          <span className="text-sm font-medium text-foreground">
+            {column.label}
+          </span>
+          <Badge variant="secondary" className="font-mono text-xs">
+            {applications.length}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          {avgDays !== null && (
+            <span className="text-xs text-muted-foreground">
+              Avg: {avgDays}d
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            aria-label={`Add to ${column.label}`}
+          >
+            <PlusIcon className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Column Content */}
@@ -224,7 +326,7 @@ function ApplicationCard({ application, isDragging }: ApplicationCardProps) {
       </p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         {/* Score */}
         <Badge
           variant="outline"
@@ -247,13 +349,24 @@ function ApplicationCard({ application, isDragging }: ApplicationCardProps) {
             : `${application.daysInStage}d`}
         </span>
 
-        {/* Interview probability */}
-        {application.interviewProbability && (
+        {/* Interview probability or source */}
+        {application.interviewProbability ? (
           <Badge variant="secondary" className="text-[10px]">
             {application.interviewProbability}% int
           </Badge>
-        )}
+        ) : application.source ? (
+          <span className="truncate text-[10px] text-muted-foreground">
+            via {application.source}
+          </span>
+        ) : null}
       </div>
+
+      {/* Source (shown below if we have interview probability) */}
+      {application.source && application.interviewProbability && (
+        <p className="mt-1.5 truncate text-[10px] text-muted-foreground">
+          Applied via {application.source}
+        </p>
+      )}
     </Link>
   )
 }

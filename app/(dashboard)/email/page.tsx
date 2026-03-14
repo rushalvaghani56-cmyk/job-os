@@ -31,6 +31,14 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import {
   Mail,
@@ -49,6 +57,7 @@ import {
   Pencil,
   Copy,
   Trash2,
+  Loader2,
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -64,6 +73,8 @@ type TemplateCategory =
   | "counter-offer"
   | "accept-offer"
 
+type Sentiment = "positive" | "neutral" | "negative"
+
 interface DetectedEmail {
   id: string
   date: Date
@@ -76,6 +87,7 @@ interface DetectedEmail {
   applicationTitle: string
   company: string
   autoAction?: string
+  sentiment?: Sentiment
   extractedData?: {
     interviewDate?: Date
     platform?: string
@@ -154,6 +166,8 @@ const mockDetectedEmails: DetectedEmail[] = [
     applicationId: "app_003",
     applicationTitle: "Product Engineer",
     company: "Linear",
+    sentiment: "positive",
+    autoAction: "Follow-up sequence stopped",
   },
   {
     id: "email_004",
@@ -184,6 +198,48 @@ const mockDetectedEmails: DetectedEmail[] = [
     autoAction: "Updated application status to Rejected",
   },
   {
+    id: "email_012",
+    date: new Date(2026, 2, 11, 8, 30),
+    from: "talent@meta.com",
+    subject: "Application Update - Software Engineer",
+    snippet:
+      "Thank you for your patience during our review process. After careful consideration, we've decided to proceed with other candidates...",
+    category: "rejections",
+    confidence: 96,
+    applicationId: "app_012",
+    applicationTitle: "Software Engineer",
+    company: "Meta",
+    autoAction: "Updated application status to Rejected",
+  },
+  {
+    id: "email_013",
+    date: new Date(2026, 2, 10, 16, 45),
+    from: "recruiting@netflix.com",
+    subject: "Update on your Netflix application",
+    snippet:
+      "We appreciate your interest in Netflix. At this time, we've decided to move forward with candidates whose experience more closely matches...",
+    category: "rejections",
+    confidence: 94,
+    applicationId: "app_013",
+    applicationTitle: "Senior Backend Engineer",
+    company: "Netflix",
+    autoAction: "Updated application status to Rejected",
+  },
+  {
+    id: "email_014",
+    date: new Date(2026, 2, 9, 11, 20),
+    from: "jobs@shopify.com",
+    subject: "Regarding your application",
+    snippet:
+      "We wanted to follow up on your application for the Staff Engineer position. Unfortunately, we will not be moving forward...",
+    category: "rejections",
+    confidence: 92,
+    applicationId: "app_014",
+    applicationTitle: "Staff Engineer",
+    company: "Shopify",
+    autoAction: "Updated application status to Rejected",
+  },
+  {
     id: "email_006",
     date: new Date(2026, 2, 11, 15, 30),
     from: "talent@openai.com",
@@ -203,6 +259,25 @@ const mockDetectedEmails: DetectedEmail[] = [
     },
   },
   {
+    id: "email_011",
+    date: new Date(2026, 2, 12, 11, 0),
+    from: "recruiting@airbnb.com",
+    subject: "Interview Confirmation - Senior Software Engineer",
+    snippet:
+      "We're excited to confirm your onsite interview for the Senior Software Engineer position. Please arrive 15 minutes early...",
+    category: "interviews",
+    confidence: 96,
+    applicationId: "app_011",
+    applicationTitle: "Senior Software Engineer",
+    company: "Airbnb",
+    autoAction: "Created calendar event",
+    extractedData: {
+      interviewDate: new Date(2026, 2, 20, 9, 0),
+      platform: "Onsite",
+      interviewer: "Engineering Panel",
+    },
+  },
+  {
     id: "email_007",
     date: new Date(2026, 2, 11, 9, 15),
     from: "sarah@anthropic.com",
@@ -214,6 +289,35 @@ const mockDetectedEmails: DetectedEmail[] = [
     applicationId: "",
     applicationTitle: "",
     company: "Anthropic",
+    sentiment: "positive",
+  },
+  {
+    id: "email_009",
+    date: new Date(2026, 2, 10, 10, 30),
+    from: "talent@datadog.com",
+    subject: "Re: Engineering Opportunities",
+    snippet:
+      "Thank you for your interest. Unfortunately, we don't have any openings that match your profile at this time. We will keep your resume on file...",
+    category: "recruiter",
+    confidence: 85,
+    applicationId: "",
+    applicationTitle: "",
+    company: "Datadog",
+    sentiment: "negative",
+  },
+  {
+    id: "email_010",
+    date: new Date(2026, 2, 9, 14, 0),
+    from: "hr@cloudflare.com",
+    subject: "Following up on your application",
+    snippet:
+      "We received your application and are currently reviewing candidates. We'll be in touch soon with next steps...",
+    category: "recruiter",
+    confidence: 78,
+    applicationId: "app_010",
+    applicationTitle: "Systems Engineer",
+    company: "Cloudflare",
+    sentiment: "neutral",
   },
   {
     id: "email_008",
@@ -227,6 +331,20 @@ const mockDetectedEmails: DetectedEmail[] = [
     applicationId: "app_008",
     applicationTitle: "Full Stack Engineer",
     company: "Ramp",
+    autoAction: "Linked to application",
+  },
+  {
+    id: "email_015",
+    date: new Date(2026, 2, 8, 10, 0),
+    from: "no-reply@workday.com",
+    subject: "Application Confirmation - Coinbase",
+    snippet:
+      "Thank you for applying to the Infrastructure Engineer position at Coinbase. Your application has been successfully submitted...",
+    category: "confirmations",
+    confidence: 99,
+    applicationId: "app_015",
+    applicationTitle: "Infrastructure Engineer",
+    company: "Coinbase",
     autoAction: "Linked to application",
   },
 ]
@@ -380,6 +498,64 @@ const mockOutboxEmails: OutboxEmail[] = [
     applicationTitle: "Senior Software Engineer",
     company: "Notion",
   },
+  {
+    id: "out_006",
+    recipient: "Jessica Wu",
+    recipientEmail: "jessica.wu@figma.com",
+    subject: "Thank you for the conversation - Design Engineer at Figma",
+    body: "Hi Jessica,\n\nThank you for taking the time to speak with me about the Design Engineer role...",
+    status: "delivered",
+    sentDate: new Date(2026, 2, 11, 11, 30),
+    applicationId: "app_005",
+    applicationTitle: "Design Engineer",
+    company: "Figma",
+  },
+  {
+    id: "out_007",
+    recipient: "David Park",
+    recipientEmail: "david.p@coinbase.com",
+    subject: "Referral Request - Senior Backend Engineer at Coinbase",
+    body: "Hi David,\n\nI hope you're doing well! I saw your work on Coinbase's trading infrastructure...",
+    status: "opened",
+    sentDate: new Date(2026, 2, 10, 9, 15),
+    openedDate: new Date(2026, 2, 10, 14, 30),
+    applicationId: "app_007",
+    applicationTitle: "Senior Backend Engineer",
+    company: "Coinbase",
+  },
+  {
+    id: "out_008",
+    recipient: "Maria Santos",
+    recipientEmail: "maria@ramp.com",
+    subject: "Following up on our conversation",
+    body: "Hi Maria,\n\nI wanted to follow up on our conversation last week about the Full Stack role...",
+    status: "replied",
+    sentDate: new Date(2026, 2, 9, 16, 0),
+    openedDate: new Date(2026, 2, 9, 17, 15),
+    repliedDate: new Date(2026, 2, 10, 10, 30),
+    applicationId: "app_008",
+    applicationTitle: "Full Stack Engineer",
+    company: "Ramp",
+  },
+  {
+    id: "out_009",
+    recipient: "Kevin Lee",
+    recipientEmail: "kevin.lee@plaid.com",
+    subject: "Introduction - Software Engineer opportunity",
+    body: "Hi Kevin,\n\nI'm reaching out because I'm very interested in Plaid's mission of democratizing financial services...",
+    status: "sent",
+    sentDate: new Date(2026, 2, 14, 10, 0),
+  },
+  {
+    id: "out_010",
+    recipient: "Rachel Kim",
+    recipientEmail: "rachel.k@databricks.com",
+    subject: "Thank you - Data Engineering Interview",
+    body: "Dear Rachel,\n\nThank you for the opportunity to interview for the Data Engineering position...",
+    status: "opened",
+    sentDate: new Date(2026, 2, 8, 15, 30),
+    openedDate: new Date(2026, 2, 8, 18, 45),
+  },
 ]
 
 // Helper functions
@@ -456,8 +632,37 @@ function getConfidenceBadgeColor(confidence: number) {
   return "bg-warning/10 text-warning-foreground border-warning/20"
 }
 
+function getSentimentBadge(sentiment: Sentiment | undefined) {
+  switch (sentiment) {
+    case "positive":
+      return { label: "Positive", className: "bg-success/10 text-success border-success/20" }
+    case "negative":
+      return { label: "Negative", className: "bg-destructive/10 text-destructive border-destructive/20" }
+    case "neutral":
+    default:
+      return { label: "Neutral", className: "bg-muted text-muted-foreground" }
+  }
+}
+
+function getCategoryBorderColor(category: EmailCategory) {
+  switch (category) {
+    case "rejections":
+      return "border-l-4 border-l-destructive"
+    case "interviews":
+      return "border-l-4 border-l-primary"
+    case "recruiter":
+      return "border-l-4 border-l-success"
+    case "confirmations":
+      return "border-l-4 border-l-muted-foreground"
+    default:
+      return ""
+  }
+}
+
 export default function EmailPage() {
+  const { toast } = useToast()
   const [isConnected, setIsConnected] = useState(true)
+  const [isConnecting, setIsConnecting] = useState(false)
   const [selectedEmail, setSelectedEmail] = useState<DetectedEmail | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(
     null
@@ -466,8 +671,42 @@ export default function EmailPage() {
   const [activeCategory, setActiveCategory] =
     useState<EmailCategory>("rejections")
   const [showCreateTemplate, setShowCreateTemplate] = useState(false)
+  const [outboxFilter, setOutboxFilter] = useState<EmailStatus | "all">("all")
+
+  const handleConnectGmail = () => {
+    setIsConnecting(true)
+    setTimeout(() => {
+      setIsConnecting(false)
+      setIsConnected(true)
+      toast({
+        title: "Gmail connected",
+        description: "Your Gmail account has been successfully connected.",
+      })
+    }, 2000)
+  }
+
+  const handleCopyTemplate = () => {
+    if (selectedTemplate) {
+      navigator.clipboard.writeText(selectedTemplate.body)
+      toast({
+        title: "Copied to clipboard",
+        description: "Template content has been copied.",
+      })
+    }
+  }
+
+  const handleSendViaGmail = () => {
+    toast({
+      title: "Opening Gmail",
+      description: "Redirecting to Gmail compose...",
+    })
+    setSelectedTemplate(null)
+  }
 
   const categoryEmails = getCategoryEmails(mockDetectedEmails, activeCategory)
+  const filteredOutboxEmails = outboxFilter === "all" 
+    ? mockOutboxEmails 
+    : mockOutboxEmails.filter(email => email.status === outboxFilter)
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -495,11 +734,21 @@ export default function EmailPage() {
           </div>
           {!isConnected && (
             <Button
-              onClick={() => setIsConnected(true)}
+              onClick={handleConnectGmail}
+              disabled={isConnecting}
               className="rounded-lg gap-2"
             >
-              <Mail className="size-4" />
-              Connect Gmail
+              {isConnecting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Mail className="size-4" />
+                  Connect Gmail
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -507,6 +756,60 @@ export default function EmailPage() {
 
       <ScrollArea className="flex-1">
         <div className="p-5 space-y-6">
+          {/* Connection Status Card */}
+          <Card className={cn(
+            "rounded-xl border-2",
+            isConnected ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"
+          )}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "size-3 rounded-full",
+                    isConnected ? "bg-success animate-pulse" : "bg-destructive"
+                  )} />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {isConnected ? "Connected to john@gmail.com" : "Gmail Not Connected"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      We scan for job-related emails only. Nothing else is read or stored.
+                    </p>
+                  </div>
+                </div>
+                {isConnected ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                    onClick={() => setIsConnected(false)}
+                  >
+                    Disconnect Gmail
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="rounded-lg gap-2"
+                    onClick={handleConnectGmail}
+                    disabled={isConnecting}
+                  >
+                    {isConnecting ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="size-4" />
+                        Connect Gmail
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Section 1: Auto-Detected Emails */}
           <Card className="rounded-xl">
             <CardHeader className="pb-4">
@@ -574,6 +877,12 @@ export default function EmailPage() {
                           <TableHead className="w-[120px]">Date</TableHead>
                           <TableHead className="w-[180px]">From</TableHead>
                           <TableHead>Subject</TableHead>
+                          {activeCategory === "interviews" && (
+                            <TableHead className="w-[160px]">Interview Details</TableHead>
+                          )}
+                          {activeCategory === "recruiter" && (
+                            <TableHead className="w-[100px]">Sentiment</TableHead>
+                          )}
                           <TableHead className="w-[100px]">Confidence</TableHead>
                           <TableHead className="w-[160px]">Application</TableHead>
                           <TableHead className="w-[180px]">Auto-Action</TableHead>
@@ -583,7 +892,7 @@ export default function EmailPage() {
                         {categoryEmails.length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={6}
+                              colSpan={activeCategory === "interviews" || activeCategory === "recruiter" ? 7 : 6}
                               className="h-24 text-center text-muted-foreground"
                             >
                               No emails in this category
@@ -595,6 +904,7 @@ export default function EmailPage() {
                               key={email.id}
                               className={cn(
                                 "cursor-pointer transition-colors",
+                                getCategoryBorderColor(email.category),
                                 index % 2 === 0 ? "bg-background" : "bg-surface"
                               )}
                               onClick={() => setSelectedEmail(email)}
@@ -608,6 +918,36 @@ export default function EmailPage() {
                               <TableCell className="text-sm font-medium truncate max-w-[300px]">
                                 {email.subject}
                               </TableCell>
+                              {activeCategory === "interviews" && (
+                                <TableCell>
+                                  {email.extractedData ? (
+                                    <div className="text-xs space-y-0.5">
+                                      {email.extractedData.interviewDate && (
+                                        <p className="font-mono">{format(email.extractedData.interviewDate, "MMM dd, HH:mm")}</p>
+                                      )}
+                                      {email.extractedData.platform && (
+                                        <p className="text-muted-foreground">{email.extractedData.platform}</p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                              )}
+                              {activeCategory === "recruiter" && (
+                                <TableCell>
+                                  {email.sentiment ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={cn("text-xs", getSentimentBadge(email.sentiment).className)}
+                                    >
+                                      {getSentimentBadge(email.sentiment).label}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                              )}
                               <TableCell>
                                 <Badge
                                   variant="outline"
@@ -622,7 +962,7 @@ export default function EmailPage() {
                               <TableCell>
                                 {email.applicationId ? (
                                   <a
-                                    href={`/applications/${email.applicationId}`}
+                                    href={`/jobs/${email.applicationId}`}
                                     onClick={(e) => e.stopPropagation()}
                                     className="flex items-center gap-1 text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                                   >
@@ -747,10 +1087,27 @@ export default function EmailPage() {
           {/* Section 3: Outbox */}
           <Card className="rounded-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base">Outbox</CardTitle>
-              <CardDescription>
-                Emails sent through Job Application OS
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Outbox</CardTitle>
+                  <CardDescription>
+                    Emails sent through Job Application OS
+                  </CardDescription>
+                </div>
+                <Select value={outboxFilter} onValueChange={(v) => setOutboxFilter(v as EmailStatus | "all")}>
+                  <SelectTrigger className="w-[140px] rounded-lg">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="queued">Queued</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="opened">Opened</SelectItem>
+                    <SelectItem value="replied">Replied</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="rounded-lg border border-border overflow-hidden">
@@ -767,60 +1124,71 @@ export default function EmailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockOutboxEmails.map((email, index) => (
-                      <TableRow
-                        key={email.id}
-                        className={cn(
-                          "cursor-pointer transition-colors",
-                          index % 2 === 0 ? "bg-background" : "bg-surface"
-                        )}
-                        onClick={() => setSelectedOutbox(email)}
-                      >
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {email.recipient}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {email.recipientEmail}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm truncate max-w-[300px]">
-                          {email.subject}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs capitalize gap-1",
-                              getStatusColor(email.status)
-                            )}
-                          >
-                            {getStatusIcon(email.status)}
-                            {email.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {format(email.sentDate, "MMM dd, HH:mm")}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            {email.openedDate && (
-                              <Eye className="size-3.5 text-primary" />
-                            )}
-                            {email.repliedDate && (
-                              <Reply className="size-3.5 text-purple-500" />
-                            )}
-                            {!email.openedDate && !email.repliedDate && (
-                              <span className="text-xs text-muted-foreground">
-                                —
-                              </span>
-                            )}
-                          </div>
+                    {filteredOutboxEmails.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="h-24 text-center text-muted-foreground"
+                        >
+                          No emails with this status
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredOutboxEmails.map((email, index) => (
+                        <TableRow
+                          key={email.id}
+                          className={cn(
+                            "cursor-pointer transition-colors",
+                            index % 2 === 0 ? "bg-background" : "bg-surface"
+                          )}
+                          onClick={() => setSelectedOutbox(email)}
+                        >
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium">
+                                {email.recipient}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {email.recipientEmail}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm truncate max-w-[300px]">
+                            {email.subject}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-xs capitalize gap-1",
+                                getStatusColor(email.status)
+                              )}
+                            >
+                              {getStatusIcon(email.status)}
+                              {email.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {format(email.sentDate, "MMM dd, HH:mm")}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {email.openedDate && (
+                                <Eye className="size-3.5 text-primary" />
+                              )}
+                              {email.repliedDate && (
+                                <Reply className="size-3.5 text-purple-500" />
+                              )}
+                              {!email.openedDate && !email.repliedDate && (
+                                <span className="text-xs text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -839,9 +1207,10 @@ export default function EmailPage() {
                     Your Privacy Matters
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    We only scan for job-related emails. Nothing else is read or
-                    stored. You can disconnect at any time and all synced data
-                    will be removed.
+                    We only scan for job-related emails matching specific patterns (rejections, interview invites, confirmations, recruiter replies). Nothing else is read or stored. You can disconnect at any time and all synced data will be removed.{" "}
+                    <a href="/settings/security" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+                      Learn More
+                    </a>
                   </p>
                 </div>
                 <Button
@@ -971,7 +1340,7 @@ export default function EmailPage() {
                         asChild
                       >
                         <a
-                          href={`/applications/${selectedEmail.applicationId}`}
+                          href={`/jobs/${selectedEmail.applicationId}`}
                         >
                           View
                           <ExternalLink className="size-3" />
@@ -1078,12 +1447,15 @@ export default function EmailPage() {
                 <Button
                   variant="outline"
                   className="rounded-lg gap-2"
-                  onClick={() => setSelectedTemplate(null)}
+                  onClick={handleCopyTemplate}
                 >
                   <Copy className="size-4" />
-                  Duplicate
+                  Copy to Clipboard
                 </Button>
-                <Button className="rounded-lg">Use This Template</Button>
+                <Button className="rounded-lg gap-2" onClick={handleSendViaGmail}>
+                  <Send className="size-4" />
+                  Send via Gmail
+                </Button>
               </DialogFooter>
             </>
           )}
@@ -1173,7 +1545,7 @@ export default function EmailPage() {
                         asChild
                       >
                         <a
-                          href={`/applications/${selectedOutbox.applicationId}`}
+                          href={`/jobs/${selectedOutbox.applicationId}`}
                         >
                           View
                           <ExternalLink className="size-3" />
@@ -1252,7 +1624,18 @@ export default function EmailPage() {
             >
               Cancel
             </Button>
-            <Button className="rounded-lg">Create Template</Button>
+            <Button
+              className="rounded-lg"
+              onClick={() => {
+                toast({
+                  title: "Template created",
+                  description: "Your custom template has been saved.",
+                })
+                setShowCreateTemplate(false)
+              }}
+            >
+              Create Template
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

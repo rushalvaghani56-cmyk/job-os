@@ -24,19 +24,33 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { toast } from "sonner"
-import { mockScoringSettings, mockTopJobs } from "./mock-data"
-import type { ScoringSettings, ScoringWeight, BonusRule } from "./types"
+import { mockTopJobs } from "./mock-data"
+import type { BonusRule } from "./types"
 import { cn } from "@/lib/utils"
 
+interface ScoringWeight {
+  id: string
+  label: string
+  value: number
+  color: string
+}
+
+// 8 weights from spec with correct defaults
 const defaultWeights: ScoringWeight[] = [
-  { id: "1", label: "Skill Match", value: 25, color: "#6366F1" },
-  { id: "2", label: "Experience Fit", value: 20, color: "#8B5CF6" },
-  { id: "3", label: "Salary Range", value: 15, color: "#EC4899" },
+  { id: "1", label: "Skill Match", value: 30, color: "#6366F1" },
+  { id: "2", label: "Title Match", value: 20, color: "#8B5CF6" },
+  { id: "3", label: "Seniority Fit", value: 15, color: "#EC4899" },
   { id: "4", label: "Location", value: 10, color: "#F43F5E" },
-  { id: "5", label: "Company Rating", value: 10, color: "#F97316" },
-  { id: "6", label: "Growth Potential", value: 8, color: "#EAB308" },
-  { id: "7", label: "Culture Fit", value: 7, color: "#22C55E" },
-  { id: "8", label: "Benefits", value: 5, color: "#06B6D4" },
+  { id: "5", label: "Salary", value: 10, color: "#F97316" },
+  { id: "6", label: "Company", value: 8, color: "#EAB308" },
+  { id: "7", label: "Culture", value: 4, color: "#22C55E" },
+  { id: "8", label: "Freshness", value: 3, color: "#06B6D4" },
+]
+
+const defaultBonusRules: BonusRule[] = [
+  { id: "1", condition: "Glassdoor rating > 4.0", field: "glassdoor_rating", operator: ">", value: "4.0", bonus: 5, enabled: true },
+  { id: "2", condition: "Company size 100-1000", field: "employee_count", operator: ">=", value: "100", bonus: 3, enabled: true },
+  { id: "3", condition: "Remote work", field: "remote", operator: "=", value: "true", bonus: 2, enabled: true },
 ]
 
 function WeightSlider({
@@ -56,7 +70,7 @@ function WeightSlider({
         className="h-3 w-3 rounded-full shrink-0"
         style={{ backgroundColor: weight.color }}
       />
-      <div className="w-32 shrink-0">
+      <div className="w-28 shrink-0">
         <span className="text-sm text-foreground">{weight.label}</span>
       </div>
       <div className="flex-1">
@@ -69,10 +83,10 @@ function WeightSlider({
           className="w-full"
         />
       </div>
-      <div className="w-12 text-right font-mono text-sm text-muted-foreground shrink-0">
+      <div className="w-10 text-right font-mono text-sm text-muted-foreground shrink-0">
         {weight.value}
       </div>
-      <div className="w-16 text-right font-mono text-xs text-muted-foreground shrink-0">
+      <div className="w-14 text-right font-mono text-xs text-muted-foreground shrink-0">
         {percentage}%
       </div>
     </div>
@@ -84,14 +98,13 @@ function LivePreview({
 }: {
   weights: ScoringWeight[]
 }) {
-  // Simulate re-scoring based on current weights
   const [jobs, setJobs] = React.useState(mockTopJobs)
   const [isUpdating, setIsUpdating] = React.useState(false)
 
   React.useEffect(() => {
     setIsUpdating(true)
     const timer = setTimeout(() => {
-      // Simulate score recalculation
+      // Simulate score recalculation based on weights
       const updatedJobs = mockTopJobs.map((job) => ({
         ...job,
         currentScore: Math.min(
@@ -110,7 +123,9 @@ function LivePreview({
 
   return (
     <div className="rounded-xl border bg-muted/50 p-4">
-      <h4 className="text-sm font-medium text-foreground mb-3">Live Preview</h4>
+      <h4 className="text-sm font-medium text-foreground mb-3">
+        Top 5 Jobs with These Weights
+      </h4>
       <div
         className={cn(
           "space-y-2 transition-opacity duration-200",
@@ -152,22 +167,23 @@ function LivePreview({
 }
 
 export function TabScoring() {
-  const [settings, setSettings] = React.useState<ScoringSettings>(mockScoringSettings)
+  const [weights, setWeights] = React.useState<ScoringWeight[]>(defaultWeights)
+  const [bonusRules, setBonusRules] = React.useState<BonusRule[]>(defaultBonusRules)
   const [isSaving, setIsSaving] = React.useState(false)
   const [isGettingSuggestion, setIsGettingSuggestion] = React.useState(false)
 
-  const total = settings.weights.reduce((sum, w) => sum + w.value, 0)
+  const total = weights.reduce((sum, w) => sum + w.value, 0)
 
   const handleWeightChange = (id: string, newValue: number) => {
-    const oldWeight = settings.weights.find((w) => w.id === id)
+    const oldWeight = weights.find((w) => w.id === id)
     if (!oldWeight) return
 
     const diff = newValue - oldWeight.value
-    const otherWeights = settings.weights.filter((w) => w.id !== id)
+    const otherWeights = weights.filter((w) => w.id !== id)
     const otherTotal = otherWeights.reduce((sum, w) => sum + w.value, 0)
 
     // Auto-normalize: distribute the diff proportionally among other weights
-    const newWeights = settings.weights.map((w) => {
+    const newWeights = weights.map((w) => {
       if (w.id === id) {
         return { ...w, value: newValue }
       }
@@ -177,72 +193,63 @@ export function TabScoring() {
       return { ...w, value: Math.max(0, w.value - adjustment) }
     })
 
-    setSettings({ ...settings, weights: newWeights })
+    setWeights(newWeights)
   }
 
   const handleBonusToggle = (id: string, enabled: boolean) => {
-    setSettings({
-      ...settings,
-      bonusRules: settings.bonusRules.map((rule) =>
-        rule.id === id ? { ...rule, enabled } : rule
-      ),
-    })
-  }
-
-  const handleBonusChange = (id: string, field: keyof BonusRule, value: string | number) => {
-    setSettings({
-      ...settings,
-      bonusRules: settings.bonusRules.map((rule) =>
-        rule.id === id ? { ...rule, [field]: value } : rule
-      ),
-    })
+    setBonusRules((prev) =>
+      prev.map((rule) => (rule.id === id ? { ...rule, enabled } : rule))
+    )
   }
 
   const handleRemoveBonus = (id: string) => {
-    setSettings({
-      ...settings,
-      bonusRules: settings.bonusRules.filter((rule) => rule.id !== id),
-    })
+    setBonusRules((prev) => prev.filter((rule) => rule.id !== id))
   }
 
   const handleAddBonus = () => {
     const newRule: BonusRule = {
       id: Date.now().toString(),
-      condition: "New Rule",
+      condition: "New condition",
       field: "custom_field",
       operator: ">",
       value: "0",
       bonus: 5,
       enabled: true,
     }
-    setSettings({
-      ...settings,
-      bonusRules: [...settings.bonusRules, newRule],
-    })
+    setBonusRules((prev) => [...prev, newRule])
+  }
+
+  const handleBonusChange = (id: string, field: keyof BonusRule, value: string | number) => {
+    setBonusRules((prev) =>
+      prev.map((rule) => (rule.id === id ? { ...rule, [field]: value } : rule))
+    )
   }
 
   const handleReset = () => {
-    setSettings({ ...settings, weights: defaultWeights })
+    setWeights(defaultWeights)
+    setBonusRules(defaultBonusRules)
     toast.success("Weights reset to defaults")
   }
 
   const handleAISuggestion = async () => {
     setIsGettingSuggestion(true)
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    // Simulate AI suggestion
-    const suggestedWeights = settings.weights.map((w) => ({
-      ...w,
-      value: Math.floor(Math.random() * 20) + 5,
-    }))
-    // Normalize to 100
-    const suggestedTotal = suggestedWeights.reduce((sum, w) => sum + w.value, 0)
-    const normalizedWeights = suggestedWeights.map((w) => ({
-      ...w,
-      value: Math.round((w.value / suggestedTotal) * 100),
-    }))
-    setSettings({ ...settings, weights: normalizedWeights })
+    
+    // Simulate AI suggestion with reasoning
+    const suggestedWeights: ScoringWeight[] = [
+      { id: "1", label: "Skill Match", value: 35, color: "#6366F1" },
+      { id: "2", label: "Title Match", value: 18, color: "#8B5CF6" },
+      { id: "3", label: "Seniority Fit", value: 12, color: "#EC4899" },
+      { id: "4", label: "Location", value: 8, color: "#F43F5E" },
+      { id: "5", label: "Salary", value: 12, color: "#F97316" },
+      { id: "6", label: "Company", value: 7, color: "#EAB308" },
+      { id: "7", label: "Culture", value: 5, color: "#22C55E" },
+      { id: "8", label: "Freshness", value: 3, color: "#06B6D4" },
+    ]
+    
+    setWeights(suggestedWeights)
     setIsGettingSuggestion(false)
-    toast.success("AI-optimized weights applied")
+    toast.success("AI-optimized weights applied: Increased skill match emphasis based on your profile strengths")
   }
 
   const handleSave = async () => {
@@ -267,12 +274,15 @@ export function TabScoring() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-foreground">Weight Sliders</h3>
-              <span className="font-mono text-xs text-muted-foreground">
-                Total: {total}
+              <span className={cn(
+                "font-mono text-xs",
+                total === 100 ? "text-emerald-600" : "text-amber-600"
+              )}>
+                Total: {total}%
               </span>
             </div>
             <div className="space-y-3">
-              {settings.weights.map((weight) => (
+              {weights.map((weight) => (
                 <WeightSlider
                   key={weight.id}
                   weight={weight}
@@ -286,7 +296,7 @@ export function TabScoring() {
           {/* Bonus Rules */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-foreground">Bonus Rules</h3>
+              <h3 className="text-sm font-medium text-foreground">Bonus Point Rules</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -303,14 +313,12 @@ export function TabScoring() {
                   <TableRow>
                     <TableHead className="w-10">On</TableHead>
                     <TableHead>Condition</TableHead>
-                    <TableHead className="w-20">Op</TableHead>
-                    <TableHead className="w-24">Value</TableHead>
-                    <TableHead className="w-20">Bonus</TableHead>
+                    <TableHead className="w-20">Points</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {settings.bonusRules.map((rule) => (
+                  {bonusRules.map((rule) => (
                     <TableRow key={rule.id}>
                       <TableCell>
                         <Switch
@@ -331,42 +339,17 @@ export function TabScoring() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={rule.operator}
-                          onValueChange={(value) =>
-                            handleBonusChange(rule.id, "operator", value)
-                          }
-                        >
-                          <SelectTrigger className="h-8 w-full focus-visible:ring-2 focus-visible:ring-primary">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value=">">{">"}</SelectItem>
-                            <SelectItem value="<">{"<"}</SelectItem>
-                            <SelectItem value="=">{"="}</SelectItem>
-                            <SelectItem value=">=">{">="}</SelectItem>
-                            <SelectItem value="<=">{"<="}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={rule.value}
-                          onChange={(e) =>
-                            handleBonusChange(rule.id, "value", e.target.value)
-                          }
-                          className="h-8 text-sm focus-visible:ring-2 focus-visible:ring-primary"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={rule.bonus}
-                          onChange={(e) =>
-                            handleBonusChange(rule.id, "bonus", parseInt(e.target.value) || 0)
-                          }
-                          className="h-8 w-16 text-sm font-mono focus-visible:ring-2 focus-visible:ring-primary"
-                        />
+                        <div className="flex items-center gap-1">
+                          <span className="text-emerald-600">+</span>
+                          <Input
+                            type="number"
+                            value={rule.bonus}
+                            onChange={(e) =>
+                              handleBonusChange(rule.id, "bonus", parseInt(e.target.value) || 0)
+                            }
+                            className="h-8 w-14 text-sm font-mono focus-visible:ring-2 focus-visible:ring-primary"
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -388,7 +371,7 @@ export function TabScoring() {
 
         {/* Live Preview */}
         <div className="lg:sticky lg:top-4 lg:self-start">
-          <LivePreview weights={settings.weights} />
+          <LivePreview weights={weights} />
         </div>
       </div>
 

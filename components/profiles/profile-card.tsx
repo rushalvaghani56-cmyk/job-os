@@ -161,7 +161,7 @@ export function ProfileCard({
 
           {/* Main Content: Ring + Info */}
           <div className="mt-5 flex items-center gap-5">
-            <CompletenessRing percentage={profile.completeness.percentage} />
+            <CompletenessRing percentage={profile.completeness.percentage} size={64} strokeWidth={6} />
 
             <div className="flex-1 space-y-3">
               {/* Missing Items */}

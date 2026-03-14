@@ -44,7 +44,7 @@ interface Profile {
 }
 
 const pages = [
-  { name: "Home", href: "/dashboard", icon: Home, keywords: ["dashboard", "overview"] },
+  { name: "Home", href: "/home", icon: Home, keywords: ["dashboard", "overview"] },
   { name: "Jobs", href: "/jobs", icon: Briefcase, keywords: ["browse", "discover", "opportunities"] },
   { name: "Review Queue", href: "/review", icon: ClipboardCheck, keywords: ["pending", "approve", "content"] },
   { name: "Applications", href: "/applications", icon: Send, keywords: ["track", "status", "pipeline"] },
@@ -54,7 +54,7 @@ const pages = [
   { name: "Market Intel", href: "/market", icon: TrendingUp, keywords: ["trends", "salary", "skills"] },
   { name: "Interviews", href: "/interviews", icon: Calendar, keywords: ["schedule", "meetings", "prep"] },
   { name: "Profiles", href: "/profiles", icon: Users, keywords: ["resume", "target", "persona"] },
-  { name: "Files", href: "/documents", icon: Folder, keywords: ["files", "resumes", "templates"] },
+  { name: "Files", href: "/files", icon: Folder, keywords: ["files", "resumes", "templates"] },
   { name: "Settings", href: "/settings", icon: Settings, keywords: ["preferences", "config", "api"] },
   { name: "Activity Log", href: "/activity", icon: ScrollText, keywords: ["history", "audit", "events"] },
 ]
@@ -94,8 +94,7 @@ export function CommandPalette() {
           break
         case "discovery":
           runCommand(() => {
-            // Mock: trigger discovery
-            console.log("Running discovery...")
+            // Trigger discovery process
           })
           break
         case "generate":
@@ -111,7 +110,7 @@ export function CommandPalette() {
         case "pause":
         case "resume":
           runCommand(() => {
-            console.log(`Automation ${action}d`)
+            // Toggle automation state
           })
           break
         default:
@@ -178,7 +177,7 @@ export function CommandPalette() {
               value={`switch profile ${profile.name} ${profile.role}`}
               onSelect={() =>
                 runCommand(() => {
-                  console.log(`Switched to profile: ${profile.name}`)
+                  // Profile switch triggered
                 })
               }
               className="flex items-center gap-2"

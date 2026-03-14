@@ -45,6 +45,14 @@ export interface OutreachContent {
   autoSend: boolean
 }
 
+export interface AnswerContent {
+  question: string
+  answer: string
+  confidence: "high" | "medium" | "low"
+  wordCount: number
+  sources?: string[]
+}
+
 export interface JobRequirement {
   text: string
   type: "required" | "preferred"

@@ -24,7 +24,7 @@ export interface CandidateProfile {
   updatedAt: string;
 }
 
-// Mock data for development
+// Mock data for development - 3 profiles as per spec
 export const mockProfiles: CandidateProfile[] = [
   {
     id: "1",
@@ -46,9 +46,9 @@ export const mockProfiles: CandidateProfile[] = [
         { label: "Work preferences", boost: 8 },
       ],
     },
-    marketFitScore: 78,
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-20",
+    marketFitScore: 82,
+    createdAt: "2026-01-15",
+    updatedAt: "2026-03-12",
   },
   {
     id: "2",
@@ -64,7 +64,7 @@ export const mockProfiles: CandidateProfile[] = [
       lastActive: "3d ago",
     },
     completeness: {
-      percentage: 65,
+      percentage: 62,
       missingItems: [
         { label: "Add portfolio", boost: 10 },
         { label: "Add certifications", boost: 7 },
@@ -72,33 +72,12 @@ export const mockProfiles: CandidateProfile[] = [
       ],
     },
     marketFitScore: 65,
-    createdAt: "2024-01-10",
-    updatedAt: "2024-01-18",
+    createdAt: "2026-01-10",
+    updatedAt: "2026-03-08",
   },
   {
     id: "3",
-    name: "Full Stack Developer",
-    targetRole: "Full Stack Engineer",
-    seniority: "Senior",
-    isActive: false,
-    stats: {
-      jobsFound: 89,
-      applications: 24,
-      interviews: 7,
-      responses: 15,
-      lastActive: "1w ago",
-    },
-    completeness: {
-      percentage: 92,
-      missingItems: [{ label: "Add references", boost: 3 }],
-    },
-    marketFitScore: 85,
-    createdAt: "2024-01-05",
-    updatedAt: "2024-01-19",
-  },
-  {
-    id: "4",
-    name: "DevOps Engineer",
+    name: "DevOps Architect",
     targetRole: "DevOps Engineer",
     seniority: "Lead",
     isActive: false,
@@ -107,7 +86,7 @@ export const mockProfiles: CandidateProfile[] = [
       applications: 5,
       interviews: 1,
       responses: 3,
-      lastActive: "2w ago",
+      lastActive: "1w ago",
     },
     completeness: {
       percentage: 45,
@@ -118,7 +97,7 @@ export const mockProfiles: CandidateProfile[] = [
       ],
     },
     marketFitScore: 52,
-    createdAt: "2024-01-08",
-    updatedAt: "2024-01-12",
+    createdAt: "2026-01-08",
+    updatedAt: "2026-02-28",
   },
 ];

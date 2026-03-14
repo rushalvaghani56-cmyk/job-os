@@ -25,7 +25,9 @@ import {
   LinkedinIcon,
   FileTextIcon,
   StarIcon,
+  CalendarDaysIcon,
 } from "lucide-react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +42,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
 
 // Interview round types with colors
 type RoundType =
@@ -122,6 +125,7 @@ interface Interview {
     starAnswersReady: boolean
     questionsPrepared: boolean
     techSetupTested: boolean
+    salaryAnchorMemorized: boolean
   }
   notes: string
   postInterview?: {
@@ -155,6 +159,7 @@ const mockInterviews: Interview[] = [
       starAnswersReady: true,
       questionsPrepared: false,
       techSetupTested: false,
+      salaryAnchorMemorized: true,
     },
     notes: "Focus on system design patterns and scalability.",
   },
@@ -179,6 +184,7 @@ const mockInterviews: Interview[] = [
       starAnswersReady: true,
       questionsPrepared: true,
       techSetupTested: true,
+      salaryAnchorMemorized: true,
     },
     notes: "Be ready to discuss Next.js experience.",
     postInterview: {
@@ -209,6 +215,7 @@ const mockInterviews: Interview[] = [
       starAnswersReady: false,
       questionsPrepared: false,
       techSetupTested: false,
+      salaryAnchorMemorized: false,
     },
     notes: "",
   },
@@ -233,6 +240,7 @@ const mockInterviews: Interview[] = [
       starAnswersReady: false,
       questionsPrepared: false,
       techSetupTested: false,
+      salaryAnchorMemorized: false,
     },
     notes: "",
   },
@@ -256,6 +264,7 @@ const mockInterviews: Interview[] = [
       starAnswersReady: false,
       questionsPrepared: false,
       techSetupTested: false,
+      salaryAnchorMemorized: false,
     },
     notes: "",
   },
@@ -279,6 +288,7 @@ const mockInterviews: Interview[] = [
       starAnswersReady: true,
       questionsPrepared: true,
       techSetupTested: true,
+      salaryAnchorMemorized: true,
     },
     notes: "Review Airbnb's core values.",
     postInterview: {
@@ -286,6 +296,116 @@ const mockInterviews: Interview[] = [
       performance: 5,
       questionsAsked: "Describe a time you handled conflict. How do you approach collaboration?",
       nextSteps: "Awaiting feedback from the team.",
+    },
+  },
+  // More future interviews
+  {
+    id: "int_007",
+    companyName: "Shopify",
+    companyLogo: "/logos/shopify.svg",
+    role: "Staff Engineer",
+    roundType: "technical",
+    dateTime: new Date(2026, 2, 17, 13, 0),
+    timezone: "PST",
+    platform: "zoom",
+    meetingLink: "https://zoom.us/j/444555666",
+    interviewer: {
+      name: "Ryan Park",
+      title: "Principal Engineer",
+      linkedinUrl: "https://linkedin.com/in/ryanpark",
+    },
+    checklist: {
+      prepReviewed: false,
+      starAnswersReady: false,
+      questionsPrepared: false,
+      techSetupTested: false,
+      salaryAnchorMemorized: false,
+    },
+    notes: "",
+  },
+  {
+    id: "int_008",
+    companyName: "Datadog",
+    companyLogo: "/logos/datadog.svg",
+    role: "Senior Backend Engineer",
+    roundType: "phone_screen",
+    dateTime: new Date(2026, 2, 19, 10, 30),
+    timezone: "PST",
+    platform: "google_meet",
+    meetingLink: "https://meet.google.com/ddd-eee-fff",
+    interviewer: {
+      name: "Priya Sharma",
+      title: "Recruiter",
+      linkedinUrl: "https://linkedin.com/in/priyasharma",
+    },
+    checklist: {
+      prepReviewed: false,
+      starAnswersReady: false,
+      questionsPrepared: false,
+      techSetupTested: false,
+      salaryAnchorMemorized: false,
+    },
+    notes: "",
+  },
+  // Past interviews
+  {
+    id: "int_009",
+    companyName: "Coinbase",
+    companyLogo: "/logos/coinbase.svg",
+    role: "Senior Software Engineer",
+    roundType: "technical",
+    dateTime: new Date(2026, 2, 10, 11, 0),
+    timezone: "PST",
+    platform: "zoom",
+    meetingLink: "https://zoom.us/j/777888999",
+    interviewer: {
+      name: "James Wilson",
+      title: "Engineering Manager",
+      linkedinUrl: "https://linkedin.com/in/jameswilson",
+    },
+    checklist: {
+      prepReviewed: true,
+      starAnswersReady: true,
+      questionsPrepared: true,
+      techSetupTested: true,
+      salaryAnchorMemorized: true,
+    },
+    notes: "Good discussion about distributed systems.",
+    postInterview: {
+      difficulty: 4,
+      performance: 3,
+      questionsAsked: "System design for a payment processing pipeline.",
+      nextSteps: "Waiting on feedback.",
+    },
+  },
+  {
+    id: "int_010",
+    companyName: "Plaid",
+    companyLogo: "/logos/plaid.svg",
+    role: "Backend Engineer",
+    roundType: "hiring_manager",
+    dateTime: new Date(2026, 2, 7, 14, 0),
+    timezone: "PST",
+    platform: "teams",
+    meetingLink: "https://teams.microsoft.com/meet/456",
+    interviewer: {
+      name: "Michelle Chen",
+      title: "Director of Engineering",
+      linkedinUrl: "https://linkedin.com/in/michellechen",
+    },
+    checklist: {
+      prepReviewed: true,
+      starAnswersReady: true,
+      questionsPrepared: true,
+      techSetupTested: true,
+      salaryAnchorMemorized: true,
+    },
+    notes: "Discussed team culture and growth opportunities.",
+    postInterview: {
+      difficulty: 3,
+      performance: 4,
+      questionsAsked: "Leadership experience and career goals.",
+      nextSteps: "Final round scheduled.",
     },
   },
 ]
@@ -491,43 +611,58 @@ export default function InterviewsPage() {
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <ScrollArea className="flex-1">
-        <div className="p-4">
-          {/* Day Headers */}
-          <div className="mb-2 grid grid-cols-7 gap-1">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div
-                key={day}
-                className="py-2 text-center text-xs font-medium text-muted-foreground"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {days.map((day) => {
-              const dayInterviews = getInterviewsForDay(day)
-              const isCurrentMonth = isSameMonth(day, currentDate)
-              const isCurrentDay = isToday(day)
-
-              return (
-                <CalendarDay
-                  key={day.toISOString()}
-                  day={day}
-                  interviews={dayInterviews}
-                  isCurrentMonth={isCurrentMonth}
-                  isCurrentDay={isCurrentDay}
-                  onSelectInterview={setSelectedInterview}
-                  viewMode={viewMode}
-                />
-              )
-            })}
-          </div>
+      {/* Calendar Grid or Empty State */}
+      {interviews.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+          <CalendarDaysIcon className="mb-4 size-16 text-muted-foreground/50" />
+          <h3 className="mb-2 text-lg font-semibold text-foreground">
+            No interviews scheduled yet
+          </h3>
+          <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+            Keep applying! When you land interviews, they will appear here.
+          </p>
+          <Button asChild>
+            <Link href="/jobs">Browse Jobs</Link>
+          </Button>
         </div>
-      </ScrollArea>
+      ) : (
+        <ScrollArea className="flex-1">
+          <div className="p-4">
+            {/* Day Headers */}
+            <div className="mb-2 grid grid-cols-7 gap-1">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                <div
+                  key={day}
+                  className="py-2 text-center text-xs font-medium text-muted-foreground"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {days.map((day) => {
+                const dayInterviews = getInterviewsForDay(day)
+                const isCurrentMonth = isSameMonth(day, currentDate)
+                const isCurrentDay = isToday(day)
+
+                return (
+                  <CalendarDay
+                    key={day.toISOString()}
+                    day={day}
+                    interviews={dayInterviews}
+                    isCurrentMonth={isCurrentMonth}
+                    isCurrentDay={isCurrentDay}
+                    onSelectInterview={setSelectedInterview}
+                    viewMode={viewMode}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        </ScrollArea>
+      )}
 
       {/* Interview Detail Modal */}
       <Dialog
@@ -655,6 +790,7 @@ function InterviewDetail({
   onUpdateNotes,
   onUpdatePostInterview,
 }: InterviewDetailProps) {
+  const { toast } = useToast()
   const config = roundTypeConfig[interview.roundType]
   const platform = platformConfig[interview.platform]
   const isPast = interview.dateTime < new Date()
@@ -809,6 +945,7 @@ function InterviewDetail({
               { key: "starAnswersReady" as const, label: "STAR answers ready?" },
               { key: "questionsPrepared" as const, label: "Questions prepared?" },
               { key: "techSetupTested" as const, label: "Tech setup tested?" },
+              { key: "salaryAnchorMemorized" as const, label: "Salary anchor memorized?" },
             ].map(({ key, label }) => (
               <div key={key} className="flex items-center gap-3">
                 <Checkbox
@@ -959,6 +1096,20 @@ function InterviewDetail({
                   className="min-h-[60px] resize-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
               </div>
+
+              {/* Save Button */}
+              <Button
+                onClick={() => {
+                  onUpdatePostInterview(postInterview)
+                  toast({
+                    title: "Feedback saved",
+                    description: "Your interview feedback has been saved successfully.",
+                  })
+                }}
+                className="w-full focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                Save Feedback
+              </Button>
             </div>
           </div>
         )}

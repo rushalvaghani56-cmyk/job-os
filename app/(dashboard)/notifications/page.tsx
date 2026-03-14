@@ -4,22 +4,23 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import {
   Star,
-  Briefcase,
+  Target,
   FileText,
-  Send,
+  CheckCircle2,
   AlertCircle,
   Calendar,
   XCircle,
   Ghost,
-  Clock,
-  Key,
-  Lock,
-  FileBarChart,
+  Mail,
+  AlertTriangle,
+  ShieldAlert,
+  BarChart,
   Search as SearchIcon,
-  Lightbulb,
+  Sparkles,
   Bell,
   CheckCircle,
   Filter,
+  Trophy,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -89,6 +90,18 @@ const mockNotifications: Notification[] = [
   },
   {
     id: "3",
+    type: "offer_received",
+    title: "Offer Received!",
+    body: "Congratulations! Linear has extended an offer for Staff Engineer",
+    priority: "critical",
+    read: false,
+    timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
+    link: "/applications?id=app_linear",
+    entityType: "application",
+    entityId: "app_linear",
+  },
+  {
+    id: "4",
     type: "high_score_job",
     title: "High Score Job Found",
     body: "4 new jobs scored 85+ matching your Senior Frontend profile",
@@ -99,7 +112,7 @@ const mockNotifications: Notification[] = [
     entityType: "job",
   },
   {
-    id: "4",
+    id: "5",
     type: "content_ready",
     title: "Content Ready for Review",
     body: "Resume and cover letter generated for Netflix - Senior Engineer",
@@ -111,7 +124,7 @@ const mockNotifications: Notification[] = [
     entityId: "doc_001",
   },
   {
-    id: "5",
+    id: "6",
     type: "application_failed",
     title: "Submission Failed",
     body: "Application to Amazon failed - CAPTCHA required",
@@ -123,7 +136,7 @@ const mockNotifications: Notification[] = [
     entityId: "app_002",
   },
   {
-    id: "6",
+    id: "7",
     type: "application_submitted",
     title: "Application Submitted",
     body: "Successfully applied to Google - Software Engineer L5",
@@ -135,7 +148,7 @@ const mockNotifications: Notification[] = [
     entityId: "app_003",
   },
   {
-    id: "7",
+    id: "8",
     type: "follow_up_due",
     title: "Follow-up Due",
     body: "Time to follow up with recruiter at Meta (Day 5)",
@@ -147,7 +160,7 @@ const mockNotifications: Notification[] = [
     entityId: "out_001",
   },
   {
-    id: "8",
+    id: "9",
     type: "api_key_warning",
     title: "API Key Expiring",
     body: "Your Anthropic API key expires in 3 days",
@@ -157,7 +170,7 @@ const mockNotifications: Notification[] = [
     link: "/settings?tab=api-keys",
   },
   {
-    id: "9",
+    id: "10",
     type: "rejection_detected",
     title: "Rejection Detected",
     body: "Received rejection email from Apple for iOS Engineer role",
@@ -169,7 +182,7 @@ const mockNotifications: Notification[] = [
     entityId: "app_004",
   },
   {
-    id: "10",
+    id: "11",
     type: "ghost_detected",
     title: "Possible Ghost",
     body: "No response from Coinbase in 14 days - marked as ghosted",
@@ -181,7 +194,7 @@ const mockNotifications: Notification[] = [
     entityId: "app_005",
   },
   {
-    id: "11",
+    id: "12",
     type: "weekly_report",
     title: "Weekly Report Ready",
     body: "Your job search summary for the week is available",
@@ -191,7 +204,7 @@ const mockNotifications: Notification[] = [
     link: "/analytics?tab=reports",
   },
   {
-    id: "12",
+    id: "13",
     type: "discovery_complete",
     title: "Discovery Complete",
     body: "Found 28 new jobs across 8 sources",
@@ -202,7 +215,7 @@ const mockNotifications: Notification[] = [
     entityType: "job",
   },
   {
-    id: "13",
+    id: "14",
     type: "copilot_insight",
     title: "AI Insight",
     body: "Your fintech cover letters get 2x more responses - emphasize payments experience",
@@ -210,24 +223,152 @@ const mockNotifications: Notification[] = [
     read: true,
     timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
   },
+  {
+    id: "15",
+    type: "dream_company_match",
+    title: "Dream Company Match",
+    body: "Notion posted Senior Product Engineer (Score: 89)",
+    priority: "critical",
+    read: true,
+    timestamp: new Date(Date.now() - 4.5 * 24 * 60 * 60 * 1000),
+    link: "/jobs/notion-product",
+    entityType: "job",
+    entityId: "job_015",
+  },
+  {
+    id: "16",
+    type: "content_ready",
+    title: "Content Ready for Review",
+    body: "Resume variant B generated for Airbnb - Staff Engineer",
+    priority: "high",
+    read: true,
+    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    link: "/review",
+    entityType: "document",
+    entityId: "doc_016",
+  },
+  {
+    id: "17",
+    type: "application_submitted",
+    title: "Application Submitted",
+    body: "Successfully applied to Figma - Design Engineer",
+    priority: "medium",
+    read: true,
+    timestamp: new Date(Date.now() - 5.2 * 24 * 60 * 60 * 1000),
+    link: "/applications",
+    entityType: "application",
+    entityId: "app_017",
+  },
+  {
+    id: "18",
+    type: "follow_up_due",
+    title: "Follow-up Due",
+    body: "Time to follow up with hiring manager at Shopify (Day 7)",
+    priority: "medium",
+    read: true,
+    timestamp: new Date(Date.now() - 5.5 * 24 * 60 * 60 * 1000),
+    link: "/outreach",
+    entityType: "outreach",
+    entityId: "out_018",
+  },
+  {
+    id: "19",
+    type: "high_score_job",
+    title: "High Score Job Found",
+    body: "Ramp posted Payments Engineer - 91 match score",
+    priority: "high",
+    read: true,
+    timestamp: new Date(Date.now() - 5.8 * 24 * 60 * 60 * 1000),
+    link: "/jobs/ramp-payments",
+    entityType: "job",
+    entityId: "job_019",
+  },
+  {
+    id: "20",
+    type: "rejection_detected",
+    title: "Rejection Detected",
+    body: "Received rejection from Databricks for Data Engineer role",
+    priority: "low",
+    read: true,
+    timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+    link: "/applications?status=rejected",
+    entityType: "application",
+    entityId: "app_020",
+  },
+  {
+    id: "21",
+    type: "interview_detected",
+    title: "Interview Scheduled",
+    body: "Phone screen confirmed with Datadog for SRE position",
+    priority: "critical",
+    read: true,
+    timestamp: new Date(Date.now() - 6.2 * 24 * 60 * 60 * 1000),
+    link: "/interviews",
+    entityType: "application",
+    entityId: "app_021",
+  },
+  {
+    id: "22",
+    type: "discovery_complete",
+    title: "Discovery Complete",
+    body: "Found 15 new remote jobs from LinkedIn and Indeed",
+    priority: "low",
+    read: true,
+    timestamp: new Date(Date.now() - 6.5 * 24 * 60 * 60 * 1000),
+    link: "/jobs?sort=newest",
+    entityType: "job",
+  },
+  {
+    id: "23",
+    type: "copilot_insight",
+    title: "AI Insight",
+    body: "Companies respond faster when you mention specific projects - try adding case studies",
+    priority: "medium",
+    read: true,
+    timestamp: new Date(Date.now() - 6.8 * 24 * 60 * 60 * 1000),
+  },
+  {
+    id: "24",
+    type: "ghost_detected",
+    title: "Possible Ghost",
+    body: "No response from Plaid in 21 days - marked as ghosted",
+    priority: "low",
+    read: true,
+    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    link: "/applications?status=ghosted",
+    entityType: "application",
+    entityId: "app_024",
+  },
+  {
+    id: "25",
+    type: "application_submitted",
+    title: "Application Submitted",
+    body: "Successfully applied to OpenAI - Research Engineer",
+    priority: "medium",
+    read: true,
+    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    link: "/applications",
+    entityType: "application",
+    entityId: "app_025",
+  },
 ]
 
 const notificationIcons: Record<NotificationType, React.ElementType> = {
   dream_company_match: Star,
-  high_score_job: Briefcase,
+  high_score_job: Target,
   content_ready: FileText,
-  application_submitted: Send,
-  application_failed: AlertCircle,
+  application_submitted: CheckCircle2,
+  application_failed: XCircle,
   interview_detected: Calendar,
   rejection_detected: XCircle,
   ghost_detected: Ghost,
-  follow_up_due: Clock,
-  api_key_warning: Key,
-  captcha_intervention: Lock,
-  weekly_report: FileBarChart,
+  follow_up_due: Mail,
+  api_key_warning: AlertTriangle,
+  captcha_intervention: ShieldAlert,
+  weekly_report: BarChart,
   discovery_complete: SearchIcon,
-  copilot_insight: Lightbulb,
-  offer_received: Star,
+  copilot_insight: Sparkles,
+  offer_received: Trophy,
   response_received: Bell,
   prep_ready: CheckCircle,
 }
@@ -239,24 +380,25 @@ const priorityColors: Record<Priority, string> = {
   low: "bg-muted text-muted-foreground border-border",
 }
 
-const iconColors: Record<NotificationType, string> = {
-  dream_company_match: "text-violet-500",
-  high_score_job: "text-emerald-500",
-  content_ready: "text-indigo-500",
-  application_submitted: "text-green-500",
-  application_failed: "text-red-500",
-  interview_detected: "text-green-500",
-  rejection_detected: "text-red-500",
-  ghost_detected: "text-slate-400",
-  follow_up_due: "text-amber-500",
-  api_key_warning: "text-red-500",
-  captcha_intervention: "text-amber-500",
-  weekly_report: "text-blue-500",
-  discovery_complete: "text-blue-500",
-  copilot_insight: "text-violet-500",
-  offer_received: "text-emerald-500",
-  response_received: "text-blue-500",
-  prep_ready: "text-green-500",
+// Icon background and text colors for each notification type (32px circle)
+const iconStyles: Record<NotificationType, { bg: string; text: string }> = {
+  dream_company_match: { bg: "bg-violet-500/10", text: "text-violet-500" },
+  high_score_job: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  content_ready: { bg: "bg-primary/10", text: "text-primary" },
+  application_submitted: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
+  application_failed: { bg: "bg-red-500/10", text: "text-red-500" },
+  interview_detected: { bg: "bg-teal-500/10", text: "text-teal-500" },
+  rejection_detected: { bg: "bg-slate-500/10", text: "text-slate-500" },
+  ghost_detected: { bg: "bg-slate-400/10", text: "text-slate-400" },
+  follow_up_due: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  api_key_warning: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  captcha_intervention: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  weekly_report: { bg: "bg-primary/10", text: "text-primary" },
+  discovery_complete: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  copilot_insight: { bg: "bg-secondary/10", text: "text-secondary-foreground" },
+  offer_received: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
+  response_received: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  prep_ready: { bg: "bg-green-500/10", text: "text-green-500" },
 }
 
 function formatTimeAgo(date: Date): string {
@@ -275,18 +417,19 @@ function formatTimeAgo(date: Date): string {
 
 function NotificationCard({ notification, onMarkRead }: { notification: Notification; onMarkRead: (id: string) => void }) {
   const Icon = notificationIcons[notification.type]
+  const styles = iconStyles[notification.type]
 
   const content = (
     <div
       className={cn(
-        "flex gap-3 p-3 rounded-xl border cursor-pointer hover:bg-surface transition-colors",
-        !notification.read && "border-primary/30 bg-primary/5",
+        "flex gap-3 p-3 rounded-xl border cursor-pointer hover:bg-surface-raised transition-colors",
+        !notification.read && "border-primary/30 bg-primary/5 border-l-2 border-l-primary",
         notification.read && "border-border"
       )}
       onClick={() => onMarkRead(notification.id)}
     >
-      <div className={cn("mt-0.5", iconColors[notification.type])}>
-        <Icon className="h-5 w-5" />
+      <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", styles.bg)}>
+        <Icon className={cn("size-4", styles.text)} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
@@ -340,6 +483,7 @@ export default function NotificationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [isLoading] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(15)
 
   const filteredNotifications = useMemo(() => {
     let filtered = notifications
@@ -363,7 +507,27 @@ export default function NotificationsPage() {
       }
     }
 
-    return filtered
+    return filtered.slice(0, visibleCount)
+  }, [notifications, searchQuery, activeTab, visibleCount])
+
+  const totalFilteredCount = useMemo(() => {
+    let filtered = notifications
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (n) =>
+          n.title.toLowerCase().includes(query) ||
+          n.body.toLowerCase().includes(query)
+      )
+    }
+    if (activeTab !== "all") {
+      if (activeTab === "unread") {
+        filtered = filtered.filter((n) => !n.read)
+      } else {
+        filtered = filtered.filter((n) => n.priority === activeTab)
+      }
+    }
+    return filtered.length
   }, [notifications, searchQuery, activeTab])
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -499,6 +663,22 @@ export default function NotificationsPage() {
                   onMarkRead={handleMarkRead}
                 />
               ))}
+            </div>
+          )}
+          
+          {/* Load More Button */}
+          {visibleCount < totalFilteredCount && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount((prev) => prev + 10)}
+                className="gap-2"
+              >
+                Load More
+                <span className="text-xs text-muted-foreground">
+                  ({totalFilteredCount - visibleCount} remaining)
+                </span>
+              </Button>
             </div>
           )}
         </TabsContent>

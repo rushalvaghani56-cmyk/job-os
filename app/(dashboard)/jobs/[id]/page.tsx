@@ -26,8 +26,7 @@ export default function JobDetailPage() {
   const job = mockJobDetail
 
   const handleStatusChange = (status: JobStatus) => {
-    // In a real app, update status in database
-    console.log("Status changed to:", status)
+    // Status change would be persisted to database
   }
 
   const handleBookmarkToggle = () => {

@@ -1,9 +1,9 @@
 import { Card } from "@/components/ui/card"
-import { Send, Eye, Reply, Star, Clock } from "lucide-react"
-import type { OutreachStats } from "@/lib/outreach-types"
+import { Users, Send, Percent, Calendar } from "lucide-react"
+import type { OutreachSummaryStats } from "@/lib/outreach-types"
 
 interface StatsBarProps {
-  stats: OutreachStats
+  stats: OutreachSummaryStats
 }
 
 export function StatsBar({ stats }: StatsBarProps) {
@@ -12,12 +12,12 @@ export function StatsBar({ stats }: StatsBarProps) {
       <Card className="p-3 rounded-xl">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-md bg-primary/10">
-            <Send className="h-3.5 w-3.5 text-primary" />
+            <Users className="h-3.5 w-3.5 text-primary" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Sent</p>
+            <p className="text-xs text-muted-foreground">Total Contacts</p>
             <p className="text-lg font-semibold font-mono text-foreground">
-              {stats.sent}
+              {stats.totalContacts}
             </p>
           </div>
         </div>
@@ -25,13 +25,13 @@ export function StatsBar({ stats }: StatsBarProps) {
 
       <Card className="p-3 rounded-xl">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-amber-500/10">
-            <Eye className="h-3.5 w-3.5 text-amber-500" />
+          <div className="p-1.5 rounded-md bg-blue-500/10">
+            <Send className="h-3.5 w-3.5 text-blue-500" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Open Rate</p>
+            <p className="text-xs text-muted-foreground">Messages Sent</p>
             <p className="text-lg font-semibold font-mono text-foreground">
-              {stats.openRate}%
+              {stats.messagesSent}
             </p>
           </div>
         </div>
@@ -40,12 +40,12 @@ export function StatsBar({ stats }: StatsBarProps) {
       <Card className="p-3 rounded-xl">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-md bg-green-500/10">
-            <Reply className="h-3.5 w-3.5 text-green-500" />
+            <Percent className="h-3.5 w-3.5 text-green-500" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Reply Rate</p>
+            <p className="text-xs text-muted-foreground">Response Rate</p>
             <p className="text-lg font-semibold font-mono text-foreground">
-              {stats.replyRate}%
+              {stats.responseRate}%
             </p>
           </div>
         </div>
@@ -53,13 +53,13 @@ export function StatsBar({ stats }: StatsBarProps) {
 
       <Card className="p-3 rounded-xl">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-indigo-500/10">
-            <Star className="h-3.5 w-3.5 text-indigo-500" />
+          <div className="p-1.5 rounded-md bg-amber-500/10">
+            <Calendar className="h-3.5 w-3.5 text-amber-500" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Best Template</p>
-            <p className="text-sm font-medium text-foreground truncate">
-              {stats.bestTemplate}
+            <p className="text-xs text-muted-foreground">Follow-ups Due Today</p>
+            <p className="text-lg font-semibold font-mono text-foreground">
+              {stats.followUpsDueToday}
             </p>
           </div>
         </div>

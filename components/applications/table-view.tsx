@@ -46,7 +46,7 @@ interface TableViewProps {
   onStatusChange: (applicationId: string, newStatus: ApplicationStatus) => void
 }
 
-type SortKey = "company" | "title" | "score" | "status" | "submitted" | "daysInStage"
+type SortKey = "company" | "title" | "score" | "status" | "submitted" | "daysInStage" | "source"
 type SortDirection = "asc" | "desc"
 
 export function TableView({ applications, onStatusChange }: TableViewProps) {
@@ -85,6 +85,9 @@ export function TableView({ applications, onStatusChange }: TableViewProps) {
         break
       case "daysInStage":
         comparison = a.daysInStage - b.daysInStage
+        break
+      case "source":
+        comparison = (a.source ?? "").localeCompare(b.source ?? "")
         break
     }
 
@@ -182,8 +185,10 @@ export function TableView({ applications, onStatusChange }: TableViewProps) {
               <SortableHeader sortKeyName="daysInStage" className="w-[100px]">
                 Days
               </SortableHeader>
-              <TableHead className="w-[120px]">Interview</TableHead>
-              <TableHead className="w-[120px]">Last Activity</TableHead>
+              <TableHead className="w-[100px]">Interview</TableHead>
+              <SortableHeader sortKeyName="source" className="w-[120px]">
+                Source
+              </SortableHeader>
               <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
@@ -277,9 +282,9 @@ export function TableView({ applications, onStatusChange }: TableViewProps) {
                   {app.interviewDate ? format(app.interviewDate, "MMM d") : "-"}
                 </TableCell>
 
-                {/* Last Activity */}
+                {/* Source */}
                 <TableCell className="text-xs text-muted-foreground">
-                  {format(app.lastActivityAt, "MMM d")}
+                  {app.source ?? "-"}
                 </TableCell>
 
                 {/* Actions */}

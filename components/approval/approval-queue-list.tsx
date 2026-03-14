@@ -131,7 +131,7 @@ export function ApprovalQueueList({
           value={filter}
           onValueChange={(v) => setFilter(v as ApprovalItemType | "all")}
         >
-          <TabsList className="h-8 w-full justify-start gap-1 bg-transparent p-0">
+          <TabsList className="h-8 w-full flex-wrap justify-start gap-1 bg-transparent p-0">
             <TabsTrigger
               value="all"
               className="h-7 px-2 text-xs data-[state=active]:bg-secondary"
@@ -155,6 +155,18 @@ export function ApprovalQueueList({
               className="h-7 px-2 text-xs data-[state=active]:bg-secondary"
             >
               Outreach ({counts.outreach})
+            </TabsTrigger>
+            <TabsTrigger
+              value="email"
+              className="h-7 px-2 text-xs data-[state=active]:bg-secondary"
+            >
+              Emails ({counts.email})
+            </TabsTrigger>
+            <TabsTrigger
+              value="answer"
+              className="h-7 px-2 text-xs data-[state=active]:bg-secondary"
+            >
+              Answers ({counts.answer})
             </TabsTrigger>
           </TabsList>
         </Tabs>

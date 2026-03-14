@@ -13,10 +13,37 @@ import {
   ReferenceLine,
 } from "recharts"
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
+import { Skeleton } from "@/components/ui/skeleton"
 import { skillDemand } from "./mock-data"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+function SkillsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border bg-card p-5">
+        <Skeleton className="mb-1 h-5 w-36" />
+        <Skeleton className="mb-4 h-4 w-64" />
+        <Skeleton className="h-[350px] w-full" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border bg-card p-4">
+          <Skeleton className="mb-4 h-5 w-32" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <Skeleton className="mb-4 h-5 w-40" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const chartConfig: ChartConfig = {
   demandScore: {
@@ -30,6 +57,17 @@ const chartConfig: ChartConfig = {
 }
 
 export function TabSkills() {
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 550)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <SkillsSkeleton />
+  }
+
   return (
     <div className="space-y-6">
       {/* Skills Gap Chart */}

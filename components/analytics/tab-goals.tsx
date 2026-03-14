@@ -22,10 +22,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { goals } from "./mock-data"
 import { cn } from "@/lib/utils"
 import { Plus, Sparkles, Target, TrendingUp, TrendingDown, Minus, Calendar } from "lucide-react"
 import type { Goal } from "./types"
+
+function GoalsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="mt-1 h-4 w-56" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border bg-card p-5">
+            <Skeleton className="mb-2 h-5 w-32" />
+            <Skeleton className="mb-4 h-8 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const paceConfig = {
   "on-track": {
@@ -54,6 +78,16 @@ const typeIcons = {
 
 export function TabGoals() {
   const [addGoalOpen, setAddGoalOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 450)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <GoalsSkeleton />
+  }
 
   return (
     <div className="space-y-6">

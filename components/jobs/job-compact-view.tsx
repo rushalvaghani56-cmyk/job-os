@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ScoreBadge } from "./score-badge"
+import { ScoreBadge } from "@/components/shared/score-badge"
 import type { Job } from "./types"
 
 interface JobCompactViewProps {

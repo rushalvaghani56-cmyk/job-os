@@ -171,8 +171,7 @@ export default function JobsPage() {
   }
 
   const handleBulkAction = (action: string) => {
-    // In a real app, this would trigger API calls
-    console.log(`Bulk action: ${action}`, selectedJobs)
+    // Bulk action triggered - clear selection after processing
     setSelectedJobs([])
   }
 

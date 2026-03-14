@@ -11,8 +11,30 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { funnelNodes, conversionRows } from "./mock-data"
+
+function FunnelSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border bg-card p-5">
+        <Skeleton className="mb-4 h-5 w-40" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+      <div className="rounded-xl border bg-card">
+        <div className="border-b p-4">
+          <Skeleton className="h-5 w-32" />
+        </div>
+        <div className="p-4 space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // Simple Sankey-like visualization using SVG
 function SankeyDiagram() {
@@ -224,6 +246,18 @@ function SankeyDiagram() {
 }
 
 export function TabFunnel() {
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => setIsLoading(false), 800)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <FunnelSkeleton />
+  }
+
   return (
     <div className="space-y-6">
       {/* Sankey Diagram */}

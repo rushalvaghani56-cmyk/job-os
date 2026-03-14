@@ -11,8 +11,8 @@ interface CompletenessRingProps {
 
 export function CompletenessRing({
   percentage,
-  size = 120,
-  strokeWidth = 8,
+  size = 64,
+  strokeWidth = 6,
   className,
 }: CompletenessRingProps) {
   const radius = (size - strokeWidth) / 2;
@@ -58,7 +58,7 @@ export function CompletenessRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("font-mono text-2xl font-bold", colors.text)}>
+        <span className={cn("font-mono text-lg font-bold", colors.text)}>
           {percentage}%
         </span>
         <span className="text-xs text-muted-foreground">Complete</span>

@@ -4,9 +4,33 @@ import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { abTests } from "./mock-data"
 import { cn } from "@/lib/utils"
 import { Trophy, XCircle, Clock, HelpCircle, Plus, BarChart3 } from "lucide-react"
+
+function ABTestingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="mt-1 h-4 w-64" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <div className="grid gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border bg-card p-5">
+            <Skeleton className="mb-4 h-6 w-48" />
+            <Skeleton className="mb-2 h-4 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const statusConfig = {
   running: {
@@ -32,6 +56,17 @@ const statusConfig = {
 }
 
 export function TabABTesting() {
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <ABTestingSkeleton />
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

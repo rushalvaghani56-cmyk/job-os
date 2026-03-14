@@ -14,8 +14,30 @@ import {
   Tooltip,
 } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { Skeleton } from "@/components/ui/skeleton"
 import { rejectionData } from "./mock-data"
 import { cn } from "@/lib/utils"
+
+function RejectionsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border bg-card p-5">
+          <Skeleton className="mb-4 h-5 w-36" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <Skeleton className="mb-4 h-5 w-40" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+      </div>
+      <div className="rounded-xl border bg-card p-4">
+        <Skeleton className="mb-2 h-5 w-24" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    </div>
+  )
+}
 
 const chartConfig: ChartConfig = {
   count: {
@@ -35,6 +57,16 @@ const pieColors = [
 
 export function TabRejections() {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 700)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <RejectionsSkeleton />
+  }
 
   return (
     <div className="space-y-6">

@@ -2,7 +2,9 @@
 
 import { useState, useCallback } from "react"
 import { toast } from "sonner"
-import { InboxIcon } from "lucide-react"
+import { InboxIcon, ArrowLeftIcon, PartyPopperIcon } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -12,6 +14,7 @@ import { ApprovalQueueList } from "@/components/approval/approval-queue-list"
 import { DetailResume } from "@/components/approval/detail-resume"
 import { DetailCoverLetter } from "@/components/approval/detail-cover-letter"
 import { DetailOutreach } from "@/components/approval/detail-outreach"
+import { DetailAnswer } from "@/components/approval/detail-answer"
 import { ActionBar } from "@/components/approval/action-bar"
 import {
   mockApprovalItems,
@@ -20,6 +23,8 @@ import {
   mockQAReport,
   mockCoverLetterContent,
   mockOutreachContent,
+  mockAnswerContent,
+  mockAnswerContentLowConfidence,
 } from "@/components/approval/mock-data"
 import type { ApprovalItem } from "@/components/approval/types"
 
@@ -150,7 +155,7 @@ export default function ReviewPage() {
   // Edit and approve
   const handleEditAndApprove = useCallback(() => {
     toast.info("Opening editor...", {
-      description: "Inline editing coming soon",
+      description: "Make your edits and save to approve",
     })
   }, [])
 
@@ -234,10 +239,16 @@ export default function ReviewPage() {
       case "outreach":
       case "email":
         return <DetailOutreach item={selectedItem} content={mockOutreachContent} />
+      case "answer":
+        // Use low confidence content for one of the answer items
+        const answerContent = selectedItem.qualityScore < 70 
+          ? mockAnswerContentLowConfidence 
+          : mockAnswerContent
+        return <DetailAnswer item={selectedItem} content={answerContent} />
       default:
         return (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            <p className="text-sm">Detail view for this type coming soon</p>
+            <p className="text-sm">Select an item to view details</p>
           </div>
         )
     }
@@ -247,23 +258,53 @@ export default function ReviewPage() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Mobile/Tablet: Stacked layout */}
+      {/* Mobile/Tablet: Full screen switching layout */}
       <div className="flex flex-1 flex-col lg:hidden">
-        {/* Queue List - takes half height on tablet, full on mobile when no selection */}
-        <div className={`${selectedItem ? 'h-1/3 border-b' : 'flex-1'} overflow-hidden`}>
-          <ApprovalQueueList
-            items={pendingItems}
-            selectedId={selectedId}
-            onSelect={handleSelect}
-            selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
-            onSelectAll={handleSelectAll}
-            onApproveSelected={handleApproveSelected}
-          />
-        </div>
-        {/* Detail View - shows below queue when item selected */}
-        {selectedItem && (
+        {/* Show queue list when no item selected, or show detail when item selected */}
+        {!selectedItem ? (
+          // Queue List - full screen
+          <div className="flex-1 overflow-hidden">
+            {pendingItems.length === 0 ? (
+              // Empty state when queue is empty
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                <PartyPopperIcon className="mb-4 size-16 text-primary/60" />
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                  All caught up!
+                </h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Your review queue is empty. Great job staying on top of things!
+                </p>
+                <Button variant="outline" asChild>
+                  <Link href="/jobs">Browse Jobs</Link>
+                </Button>
+              </div>
+            ) : (
+              <ApprovalQueueList
+                items={pendingItems}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onSelectAll={handleSelectAll}
+                onApproveSelected={handleApproveSelected}
+              />
+            )}
+          </div>
+        ) : (
+          // Detail View - full screen with back button
           <div className="flex flex-1 flex-col min-h-0">
+            {/* Mobile back button */}
+            <div className="flex items-center gap-2 border-b border-border bg-background px-4 py-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedId(null)}
+                className="gap-1.5"
+              >
+                <ArrowLeftIcon className="size-4" />
+                Back to Queue
+              </Button>
+            </div>
             <div className="flex-1 min-h-0 overflow-auto">{renderDetailPanel()}</div>
             {selectedItem.status === "pending" && (
               <ActionBar

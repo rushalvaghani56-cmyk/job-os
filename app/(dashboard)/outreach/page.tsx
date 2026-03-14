@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -11,25 +14,48 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, Plus, Filter } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Search, Plus, Filter, Users, Loader2, UserPlus, Linkedin } from "lucide-react"
 import { ContactCard } from "@/components/outreach/contact-card"
 import { ContactDetail, EmptyContactDetail } from "@/components/outreach/contact-detail"
 import { StatsBar } from "@/components/outreach/stats-bar"
 import {
   mockContacts,
   mockMessages,
-  mockStats,
+  mockSummaryStats,
+  mockProspectedContacts,
   type Contact,
   type WarmthLevel,
   type ContactStatus,
+  type ProspectedContact,
 } from "@/lib/outreach-types"
 
 export default function OutreachPage() {
+  const { toast } = useToast()
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [companyFilter, setCompanyFilter] = useState<string>("all")
   const [warmthFilter, setWarmthFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [prospectCompany, setProspectCompany] = useState("")
+  const [isSearchingProspects, setIsSearchingProspects] = useState(false)
+  const [showProspects, setShowProspects] = useState(false)
+
+  const handleSearchProspects = () => {
+    if (!prospectCompany.trim()) return
+    setIsSearchingProspects(true)
+    setTimeout(() => {
+      setIsSearchingProspects(false)
+      setShowProspects(true)
+    }, 1500)
+  }
+
+  const handleAddProspect = (prospect: ProspectedContact) => {
+    toast({
+      title: "Contact added",
+      description: `${prospect.name} has been added to your outreach list.`,
+    })
+  }
 
   const companies = useMemo(() => {
     const uniqueCompanies = [...new Set(mockContacts.map((c) => c.company))]
@@ -175,6 +201,85 @@ export default function OutreachPage() {
               {filteredContacts.length} contact{filteredContacts.length !== 1 ? "s" : ""}
             </p>
           </div>
+
+          {/* Prospecting Section */}
+          <div className="shrink-0 p-4 border-t border-border">
+            <Card className="rounded-xl">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Find New Contacts
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Discover contacts at target companies
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Company name..."
+                    value={prospectCompany}
+                    onChange={(e) => setProspectCompany(e.target.value)}
+                    className="flex-1 h-8 text-sm rounded-lg"
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchProspects()}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 rounded-lg"
+                    onClick={handleSearchProspects}
+                    disabled={isSearchingProspects || !prospectCompany.trim()}
+                  >
+                    {isSearchingProspects ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Search"
+                    )}
+                  </Button>
+                </div>
+
+                {showProspects && (
+                  <div className="mt-3 space-y-2">
+                    {mockProspectedContacts.map((prospect) => (
+                      <div
+                        key={prospect.id}
+                        className="flex items-center justify-between p-2 rounded-lg border border-border bg-surface hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Avatar className="h-7 w-7 shrink-0">
+                            <AvatarFallback className="text-xs">
+                              {prospect.name.split(" ").map(n => n[0]).join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium truncate">
+                              {prospect.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {prospect.title}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="outline" className="text-[10px] gap-1">
+                            <Linkedin className="h-2.5 w-2.5" />
+                            {prospect.mutualConnections}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 rounded-lg"
+                            onClick={() => handleAddProspect(prospect)}
+                          >
+                            <UserPlus className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Contact Detail */}
@@ -192,7 +297,7 @@ export default function OutreachPage() {
       </div>
 
       {/* Stats Bar */}
-      <StatsBar stats={mockStats} />
+      <StatsBar stats={mockSummaryStats} />
     </div>
   )
 }

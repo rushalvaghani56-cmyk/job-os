@@ -1,31 +1,71 @@
 "use client"
 
+import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Sparkles, Send, ArrowRight, Zap, TrendingUp } from "lucide-react"
 import Link from "next/link"
-import { useShell } from "@/components/shell/shell-context"
+import { useCopilotStore } from "@/stores/copilotStore"
 
 const insights = [
   {
     id: "1",
     icon: Zap,
-    message: "3 jobs >85% match unprocessed",
-    actionLabel: "Review now",
-    actionHref: "/dashboard/jobs?filter=high-match",
+    message: "3 jobs scored >85 are unprocessed",
+    actionLabel: "Generate Content",
+    actionHref: "/review?filter=high-score&action=generate",
   },
   {
     id: "2",
     icon: TrendingUp,
-    message: "Your fintech CLs get 2x responses",
+    message: "Your fintech cover letters get 2x more responses",
     actionLabel: null,
     actionHref: null,
   },
 ]
 
-export function CopilotPreview() {
-  const { setCopilotOpen } = useShell()
+interface CopilotPreviewProps {
+  isLoading?: boolean
+}
+
+export function CopilotPreview({ isLoading = false }: CopilotPreviewProps) {
+  const [query, setQuery] = React.useState("")
+  const { toggleCopilot, setInput } = useCopilotStore()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (query.trim()) {
+      setInput(query)
+    }
+    toggleCopilot()
+  }
+
+  const handleFocus = () => {
+    toggleCopilot()
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="p-5 h-full flex flex-col">
+        <CardHeader className="p-0 pb-4">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-5 w-24" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 flex-1 flex flex-col gap-4">
+          <Skeleton className="h-10 w-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+          </div>
+          <Skeleton className="h-5 w-32 mx-auto" />
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="p-5 h-full flex flex-col">
@@ -37,22 +77,24 @@ export function CopilotPreview() {
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col gap-4">
         {/* Input */}
-        <div className="relative">
+        <form onSubmit={handleSubmit} className="relative">
           <Input
             placeholder="Ask me anything..."
-            className="pr-10 focus-visible:ring-2 focus-visible:ring-primary"
-            onFocus={() => setCopilotOpen(true)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={handleFocus}
+            className="pr-10"
           />
           <Button
+            type="submit"
             size="icon"
             variant="ghost"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 focus-visible:ring-2 focus-visible:ring-primary"
-            onClick={() => setCopilotOpen(true)}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
           >
             <Send className="h-4 w-4" />
             <span className="sr-only">Open copilot</span>
           </Button>
-        </div>
+        </form>
 
         {/* Proactive Insights */}
         <div className="space-y-2 flex-1">
@@ -67,12 +109,14 @@ export function CopilotPreview() {
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">{insight.message}</p>
                 {insight.actionLabel && insight.actionHref && (
-                  <Link
-                    href={insight.actionHref}
-                    className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="h-auto p-0 text-xs text-primary hover:underline"
                   >
-                    {insight.actionLabel}
-                  </Link>
+                    <Link href={insight.actionHref}>{insight.actionLabel}</Link>
+                  </Button>
                 )}
               </div>
             </div>
@@ -81,8 +125,8 @@ export function CopilotPreview() {
 
         {/* Open Full Copilot Link */}
         <button
-          onClick={() => setCopilotOpen(true)}
-          className="flex items-center justify-center gap-1 text-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+          onClick={() => toggleCopilot()}
+          className="flex items-center justify-center gap-1 text-sm text-primary hover:underline"
         >
           Open full Copilot
           <ArrowRight className="h-4 w-4" />

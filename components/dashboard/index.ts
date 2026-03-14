@@ -1,0 +1,8 @@
+export { StatsCard } from "./stats-card"
+export { StatsRow } from "./stats-row"
+export { ActionRequiredPanel } from "./action-required-panel"
+export { CopilotPreview } from "./copilot-preview"
+export { DiscoveryStatus } from "./discovery-status"
+export { GoalProgress } from "./goal-progress"
+export { RecentActivity } from "./recent-activity"
+export { QuickActions } from "./quick-actions"

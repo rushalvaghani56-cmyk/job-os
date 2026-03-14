@@ -22,6 +22,7 @@ import {
   PanelLeft,
   Zap,
   Shield,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useShell } from "./shell-context"
 import { ProfileSwitcher } from "./profile-switcher"
+import { useAuthStore } from "@/stores/authStore"
 
 interface NavItem {
   label: string
@@ -39,7 +41,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { label: "Home", href: "/dashboard", icon: Home },
+  { label: "Home", href: "/home", icon: Home },
   { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12, badgeColor: "green" },
   { label: "Review Queue", href: "/review", icon: ClipboardCheck, badge: 24, badgeColor: "amber" },
   { label: "Applications", href: "/applications", icon: Send, badge: 8, badgeColor: "blue" },
@@ -52,22 +54,20 @@ const mainNavItems: NavItem[] = [
 
 const secondaryNavItems: NavItem[] = [
   { label: "Profiles", href: "/profiles", icon: Users },
-  { label: "Documents", href: "/documents", icon: Folder },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Files", href: "/files", icon: Folder },
+  { label: "Notifications", href: "/notifications", icon: Bell, badge: 5, badgeColor: "red" },
   { label: "Activity Log", href: "/activity", icon: ScrollText },
+  { label: "Settings", href: "/settings", icon: Settings },
 ]
 
 const bottomNavItems: NavItem[] = [
-  { label: "What's New", href: "/changelog", icon: Sparkles },
+  { label: "What's New", href: "/changelog", icon: Sparkles, badge: 3, badgeColor: "blue" },
 ]
 
 // Admin-only nav items (only visible to owners)
 const adminNavItems: NavItem[] = [
   { label: "Admin Panel", href: "/admin", icon: Shield },
 ]
-
-// Mock: In production, this would come from auth context
-const isOwner = true
 
 function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const pathname = usePathname()
@@ -140,6 +140,8 @@ function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed: boole
 
 export function SidebarNav() {
   const { sidebarCollapsed, toggleSidebar } = useShell()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === "super_admin"
   const hasWhatsNewDot = true // Mock: would come from API
 
   return (
@@ -158,7 +160,7 @@ export function SidebarNav() {
         )}
       >
         {!sidebarCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <Link href="/home" className="flex items-center gap-2 font-semibold">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Briefcase className="h-4 w-4" />
             </div>
@@ -214,8 +216,8 @@ export function SidebarNav() {
           ))}
         </div>
 
-        {/* Admin Section - Only visible to owners */}
-        {isOwner && (
+        {/* Admin Section - Only visible to admins */}
+        {isAdmin && (
           <>
             <div className="my-4 border-t" />
             <div className="space-y-1">

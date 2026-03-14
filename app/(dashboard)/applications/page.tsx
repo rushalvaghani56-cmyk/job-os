@@ -8,9 +8,11 @@ import {
   CalendarIcon,
   SearchIcon,
   FilterIcon,
+  PlusIcon,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   Select,
@@ -19,6 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { KanbanView } from "@/components/applications/kanban-view"
 import { TableView } from "@/components/applications/table-view"
 import { CalendarView } from "@/components/applications/calendar-view"
@@ -36,9 +47,13 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>(mockApplications)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all")
-  const [undoStack, setUndoStack] = useState<
-    { applicationId: string; previousStatus: ApplicationStatus }[]
-  >([])
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [newApplication, setNewApplication] = useState({
+    company: "",
+    jobTitle: "",
+    status: "pending" as ApplicationStatus,
+    url: "",
+  })
 
   // Filter applications
   const filteredApplications = applications.filter((app) => {
@@ -69,10 +84,10 @@ export default function ApplicationsPage() {
       )
 
       // Show undo toast
-      const toastId = toast.success(
+      toast.success(
         `Moved "${app.jobTitle}" to ${getStatusLabel(newStatus)}`,
         {
-          duration: 5000,
+          duration: 30000,
           action: {
             label: "Undo",
             onClick: () => {
@@ -91,6 +106,40 @@ export default function ApplicationsPage() {
     },
     [applications]
   )
+
+  // Handle add application
+  const handleAddApplication = () => {
+    if (!newApplication.company || !newApplication.jobTitle) {
+      toast.error("Please fill in company and job title")
+      return
+    }
+
+    const newApp: Application = {
+      id: `app-${Date.now()}`,
+      jobId: `job-${Date.now()}`,
+      jobTitle: newApplication.jobTitle,
+      company: {
+        name: newApplication.company,
+        logo: newApplication.company.substring(0, 2),
+      },
+      score: 0,
+      status: newApplication.status,
+      lastActivityAt: new Date(),
+      daysInStage: 0,
+      source: "Manual",
+    }
+
+    setApplications((prev) => [newApp, ...prev])
+    setAddDialogOpen(false)
+    setNewApplication({
+      company: "",
+      jobTitle: "",
+      status: "pending",
+      url: "",
+    })
+
+    toast.success(`Added "${newApp.jobTitle}" at ${newApp.company.name}`)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -161,6 +210,91 @@ export default function ApplicationsPage() {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Add Application Button */}
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-1.5">
+              <PlusIcon className="size-4" />
+              <span className="hidden sm:inline">Add Application</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Application</DialogTitle>
+              <DialogDescription>
+                Manually track a job application you submitted outside of this system.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="company">Company</Label>
+                <Input
+                  id="company"
+                  placeholder="e.g., Stripe"
+                  value={newApplication.company}
+                  onChange={(e) =>
+                    setNewApplication((prev) => ({ ...prev, company: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="title">Job Title</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g., Senior Frontend Engineer"
+                  value={newApplication.jobTitle}
+                  onChange={(e) =>
+                    setNewApplication((prev) => ({ ...prev, jobTitle: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={newApplication.status}
+                  onValueChange={(v) =>
+                    setNewApplication((prev) => ({
+                      ...prev,
+                      status: v as ApplicationStatus,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {APPLICATION_COLUMNS.map((col) => (
+                      <SelectItem key={col.id} value={col.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={`size-2 rounded-full ${col.color}`} />
+                          {col.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="url">Job URL (optional)</Label>
+                <Input
+                  id="url"
+                  placeholder="https://..."
+                  value={newApplication.url}
+                  onChange={(e) =>
+                    setNewApplication((prev) => ({ ...prev, url: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddApplication}>Add Application</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Bar */}

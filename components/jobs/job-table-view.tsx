@@ -29,7 +29,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ScoreBadge, ConfidenceBar } from "./score-badge"
+import { ScoreBadge } from "@/components/shared/score-badge"
+import { ConfidenceBar } from "@/components/shared/confidence-bar"
 import type { Job, SortOption } from "./types"
 
 interface JobTableViewProps {
