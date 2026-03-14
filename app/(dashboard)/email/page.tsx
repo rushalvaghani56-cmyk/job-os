@@ -31,6 +31,13 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import {
@@ -50,6 +57,7 @@ import {
   Pencil,
   Copy,
   Trash2,
+  Loader2,
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -588,6 +596,7 @@ export default function EmailPage() {
   const [activeCategory, setActiveCategory] =
     useState<EmailCategory>("rejections")
   const [showCreateTemplate, setShowCreateTemplate] = useState(false)
+  const [outboxFilter, setOutboxFilter] = useState<EmailStatus | "all">("all")
 
   const handleConnectGmail = () => {
     setIsConnecting(true)
@@ -620,6 +629,9 @@ export default function EmailPage() {
   }
 
   const categoryEmails = getCategoryEmails(mockDetectedEmails, activeCategory)
+  const filteredOutboxEmails = outboxFilter === "all" 
+    ? mockOutboxEmails 
+    : mockOutboxEmails.filter(email => email.status === outboxFilter)
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -669,6 +681,60 @@ export default function EmailPage() {
 
       <ScrollArea className="flex-1">
         <div className="p-5 space-y-6">
+          {/* Connection Status Card */}
+          <Card className={cn(
+            "rounded-xl border-2",
+            isConnected ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"
+          )}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "size-3 rounded-full",
+                    isConnected ? "bg-success animate-pulse" : "bg-destructive"
+                  )} />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {isConnected ? "Connected to john@gmail.com" : "Gmail Not Connected"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      We scan for job-related emails only. Nothing else is read or stored.
+                    </p>
+                  </div>
+                </div>
+                {isConnected ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                    onClick={() => setIsConnected(false)}
+                  >
+                    Disconnect Gmail
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="rounded-lg gap-2"
+                    onClick={handleConnectGmail}
+                    disabled={isConnecting}
+                  >
+                    {isConnecting ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="size-4" />
+                        Connect Gmail
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Section 1: Auto-Detected Emails */}
           <Card className="rounded-xl">
             <CardHeader className="pb-4">
@@ -736,6 +802,12 @@ export default function EmailPage() {
                           <TableHead className="w-[120px]">Date</TableHead>
                           <TableHead className="w-[180px]">From</TableHead>
                           <TableHead>Subject</TableHead>
+                          {activeCategory === "interviews" && (
+                            <TableHead className="w-[160px]">Interview Details</TableHead>
+                          )}
+                          {activeCategory === "recruiter" && (
+                            <TableHead className="w-[100px]">Sentiment</TableHead>
+                          )}
                           <TableHead className="w-[100px]">Confidence</TableHead>
                           <TableHead className="w-[160px]">Application</TableHead>
                           <TableHead className="w-[180px]">Auto-Action</TableHead>
@@ -745,7 +817,7 @@ export default function EmailPage() {
                         {categoryEmails.length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={6}
+                              colSpan={activeCategory === "interviews" || activeCategory === "recruiter" ? 7 : 6}
                               className="h-24 text-center text-muted-foreground"
                             >
                               No emails in this category
@@ -757,6 +829,7 @@ export default function EmailPage() {
                               key={email.id}
                               className={cn(
                                 "cursor-pointer transition-colors",
+                                getCategoryBorderColor(email.category),
                                 index % 2 === 0 ? "bg-background" : "bg-surface"
                               )}
                               onClick={() => setSelectedEmail(email)}
@@ -770,6 +843,36 @@ export default function EmailPage() {
                               <TableCell className="text-sm font-medium truncate max-w-[300px]">
                                 {email.subject}
                               </TableCell>
+                              {activeCategory === "interviews" && (
+                                <TableCell>
+                                  {email.extractedData ? (
+                                    <div className="text-xs space-y-0.5">
+                                      {email.extractedData.interviewDate && (
+                                        <p className="font-mono">{format(email.extractedData.interviewDate, "MMM dd, HH:mm")}</p>
+                                      )}
+                                      {email.extractedData.platform && (
+                                        <p className="text-muted-foreground">{email.extractedData.platform}</p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                              )}
+                              {activeCategory === "recruiter" && (
+                                <TableCell>
+                                  {email.sentiment ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={cn("text-xs", getSentimentBadge(email.sentiment).className)}
+                                    >
+                                      {getSentimentBadge(email.sentiment).label}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                              )}
                               <TableCell>
                                 <Badge
                                   variant="outline"
@@ -784,7 +887,7 @@ export default function EmailPage() {
                               <TableCell>
                                 {email.applicationId ? (
                                   <a
-                                    href={`/applications/${email.applicationId}`}
+                                    href={`/jobs/${email.applicationId}`}
                                     onClick={(e) => e.stopPropagation()}
                                     className="flex items-center gap-1 text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                                   >
@@ -909,10 +1012,27 @@ export default function EmailPage() {
           {/* Section 3: Outbox */}
           <Card className="rounded-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base">Outbox</CardTitle>
-              <CardDescription>
-                Emails sent through Job Application OS
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Outbox</CardTitle>
+                  <CardDescription>
+                    Emails sent through Job Application OS
+                  </CardDescription>
+                </div>
+                <Select value={outboxFilter} onValueChange={(v) => setOutboxFilter(v as EmailStatus | "all")}>
+                  <SelectTrigger className="w-[140px] rounded-lg">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="queued">Queued</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="opened">Opened</SelectItem>
+                    <SelectItem value="replied">Replied</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="rounded-lg border border-border overflow-hidden">
@@ -929,60 +1049,71 @@ export default function EmailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockOutboxEmails.map((email, index) => (
-                      <TableRow
-                        key={email.id}
-                        className={cn(
-                          "cursor-pointer transition-colors",
-                          index % 2 === 0 ? "bg-background" : "bg-surface"
-                        )}
-                        onClick={() => setSelectedOutbox(email)}
-                      >
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {email.recipient}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {email.recipientEmail}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm truncate max-w-[300px]">
-                          {email.subject}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs capitalize gap-1",
-                              getStatusColor(email.status)
-                            )}
-                          >
-                            {getStatusIcon(email.status)}
-                            {email.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {format(email.sentDate, "MMM dd, HH:mm")}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            {email.openedDate && (
-                              <Eye className="size-3.5 text-primary" />
-                            )}
-                            {email.repliedDate && (
-                              <Reply className="size-3.5 text-purple-500" />
-                            )}
-                            {!email.openedDate && !email.repliedDate && (
-                              <span className="text-xs text-muted-foreground">
-                                —
-                              </span>
-                            )}
-                          </div>
+                    {filteredOutboxEmails.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="h-24 text-center text-muted-foreground"
+                        >
+                          No emails with this status
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredOutboxEmails.map((email, index) => (
+                        <TableRow
+                          key={email.id}
+                          className={cn(
+                            "cursor-pointer transition-colors",
+                            index % 2 === 0 ? "bg-background" : "bg-surface"
+                          )}
+                          onClick={() => setSelectedOutbox(email)}
+                        >
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium">
+                                {email.recipient}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {email.recipientEmail}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm truncate max-w-[300px]">
+                            {email.subject}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-xs capitalize gap-1",
+                                getStatusColor(email.status)
+                              )}
+                            >
+                              {getStatusIcon(email.status)}
+                              {email.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {format(email.sentDate, "MMM dd, HH:mm")}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {email.openedDate && (
+                                <Eye className="size-3.5 text-primary" />
+                              )}
+                              {email.repliedDate && (
+                                <Reply className="size-3.5 text-purple-500" />
+                              )}
+                              {!email.openedDate && !email.repliedDate && (
+                                <span className="text-xs text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -1001,9 +1132,10 @@ export default function EmailPage() {
                     Your Privacy Matters
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    We only scan for job-related emails. Nothing else is read or
-                    stored. You can disconnect at any time and all synced data
-                    will be removed.
+                    We only scan for job-related emails matching specific patterns (rejections, interview invites, confirmations, recruiter replies). Nothing else is read or stored. You can disconnect at any time and all synced data will be removed.{" "}
+                    <a href="#" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+                      Learn More
+                    </a>
                   </p>
                 </div>
                 <Button
@@ -1133,7 +1265,7 @@ export default function EmailPage() {
                         asChild
                       >
                         <a
-                          href={`/applications/${selectedEmail.applicationId}`}
+                          href={`/jobs/${selectedEmail.applicationId}`}
                         >
                           View
                           <ExternalLink className="size-3" />
@@ -1240,12 +1372,15 @@ export default function EmailPage() {
                 <Button
                   variant="outline"
                   className="rounded-lg gap-2"
-                  onClick={() => setSelectedTemplate(null)}
+                  onClick={handleCopyTemplate}
                 >
                   <Copy className="size-4" />
-                  Duplicate
+                  Copy to Clipboard
                 </Button>
-                <Button className="rounded-lg">Use This Template</Button>
+                <Button className="rounded-lg gap-2" onClick={handleSendViaGmail}>
+                  <Send className="size-4" />
+                  Send via Gmail
+                </Button>
               </DialogFooter>
             </>
           )}
@@ -1335,7 +1470,7 @@ export default function EmailPage() {
                         asChild
                       >
                         <a
-                          href={`/applications/${selectedOutbox.applicationId}`}
+                          href={`/jobs/${selectedOutbox.applicationId}`}
                         >
                           View
                           <ExternalLink className="size-3" />
