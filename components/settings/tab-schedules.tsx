@@ -1,11 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Save, Plus, Trash2, Play, Pause, Clock, Search, Send, RefreshCw } from "lucide-react"
+import { Save, Play, RefreshCw, Search, Sparkles, FileText, Mail, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import {
   Select,
@@ -14,50 +12,119 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { mockSchedules } from "./mock-data"
-import type { ScheduleItem } from "./types"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
 
-const scheduleTypes = [
-  { value: "discovery", label: "Discovery", icon: Search },
-  { value: "apply", label: "Apply", icon: Send },
-  { value: "outreach", label: "Outreach", icon: Send },
-  { value: "sync", label: "Sync", icon: RefreshCw },
-]
+interface ScheduleTask {
+  id: string
+  name: string
+  icon: LucideIcon
+  frequency: string
+  timezone: string
+  lastRun: Date | null
+  nextRun: Date | null
+  enabled: boolean
+}
 
-const frequencies = [
-  { value: "hourly", label: "Hourly" },
+const frequencyOptions = [
+  { value: "2h", label: "Every 2 hours" },
+  { value: "4h", label: "Every 4 hours" },
+  { value: "6h", label: "Every 6 hours" },
+  { value: "12h", label: "Every 12 hours" },
   { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "custom", label: "Custom" },
+  { value: "manual", label: "Manual only" },
 ]
 
-const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+const defaultTasks: ScheduleTask[] = [
+  {
+    id: "1",
+    name: "Job Discovery",
+    icon: Search,
+    frequency: "6h",
+    timezone: "America/Los_Angeles",
+    lastRun: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    nextRun: new Date(Date.now() + 4 * 60 * 60 * 1000),
+    enabled: true,
+  },
+  {
+    id: "2",
+    name: "Job Scoring",
+    icon: Sparkles,
+    frequency: "after_discovery",
+    timezone: "America/Los_Angeles",
+    lastRun: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    nextRun: null,
+    enabled: true,
+  },
+  {
+    id: "3",
+    name: "Content Generation",
+    icon: FileText,
+    frequency: "auto_82",
+    timezone: "America/Los_Angeles",
+    lastRun: new Date(Date.now() - 4 * 60 * 60 * 1000),
+    nextRun: null,
+    enabled: true,
+  },
+  {
+    id: "4",
+    name: "Email Scanning",
+    icon: Mail,
+    frequency: "30m",
+    timezone: "America/Los_Angeles",
+    lastRun: new Date(Date.now() - 15 * 60 * 1000),
+    nextRun: new Date(Date.now() + 15 * 60 * 1000),
+    enabled: true,
+  },
+  {
+    id: "5",
+    name: "Follow-up Check",
+    icon: MessageSquare,
+    frequency: "daily_9am",
+    timezone: "America/Los_Angeles",
+    lastRun: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    nextRun: new Date(Date.now() + 12 * 60 * 60 * 1000),
+    enabled: true,
+  },
+]
+
+function formatDateTime(date: Date | null) {
+  if (!date) return "—"
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getFrequencyLabel(frequency: string) {
+  switch (frequency) {
+    case "after_discovery":
+      return "After each discovery"
+    case "auto_82":
+      return "Auto for score ≥82"
+    case "30m":
+      return "Every 30 minutes"
+    case "daily_9am":
+      return "Daily at 9:00 AM"
+    default:
+      return frequencyOptions.find((f) => f.value === frequency)?.label || frequency
+  }
+}
 
 function ScheduleCard({
-  schedule,
-  onToggle,
-  onDelete,
+  task,
+  onFrequencyChange,
   onRunNow,
 }: {
-  schedule: ScheduleItem
-  onToggle: (enabled: boolean) => void
-  onDelete: () => void
+  task: ScheduleTask
+  onFrequencyChange: (frequency: string) => void
   onRunNow: () => void
 }) {
   const [isRunning, setIsRunning] = React.useState(false)
-  const typeConfig = scheduleTypes.find((t) => t.value === schedule.type)
-  const Icon = typeConfig?.icon || Clock
+  const Icon = task.icon
 
   const handleRunNow = async () => {
     setIsRunning(true)
@@ -66,70 +133,66 @@ function ScheduleCard({
     setIsRunning(false)
   }
 
-  const formatTime = (date?: Date) => {
-    if (!date) return "—"
-    return date.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  const isSpecialFrequency = ["after_discovery", "auto_82", "30m", "daily_9am"].includes(task.frequency)
 
   return (
-    <div className="rounded-xl border bg-card p-5 transition-colors hover:bg-accent/50">
-      <div className="flex items-start justify-between gap-4">
+    <div className="rounded-xl border bg-card p-5">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-lg",
-              schedule.enabled
-                ? "bg-primary/10 text-primary"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Icon className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-medium text-foreground">{schedule.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary" className="text-xs">
-                {typeConfig?.label}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {schedule.frequency === "weekly" && schedule.days
-                  ? schedule.days.join(", ")
-                  : schedule.frequency}
-                {schedule.time && ` at ${schedule.time}`}
-              </span>
-            </div>
+            <h3 className="font-medium text-foreground">{task.name}</h3>
+            <p className="text-xs text-muted-foreground">
+              {task.timezone.replace("_", " ")}
+            </p>
           </div>
         </div>
-        <Switch
-          checked={schedule.enabled}
-          onCheckedChange={onToggle}
-          className="focus-visible:ring-2 focus-visible:ring-primary"
-        />
+        <Badge variant="secondary" className="text-xs">
+          {getFrequencyLabel(task.frequency)}
+        </Badge>
       </div>
 
-      <div className="mt-4 grid gap-2 text-xs text-muted-foreground">
-        <div className="flex justify-between">
-          <span>Last run:</span>
-          <span className="font-mono">{formatTime(schedule.lastRun)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Next run:</span>
-          <span className="font-mono">{formatTime(schedule.nextRun)}</span>
-        </div>
-      </div>
+      <div className="mt-4 space-y-3">
+        {/* Frequency Selector */}
+        {!isSpecialFrequency && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Frequency</Label>
+            <Select value={task.frequency} onValueChange={onFrequencyChange}>
+              <SelectTrigger className="h-9 focus-visible:ring-2 focus-visible:ring-primary">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {frequencyOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-      <div className="mt-4 flex gap-2">
+        {/* Timestamps */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-muted-foreground">Last run:</span>
+            <p className="font-mono text-foreground">{formatDateTime(task.lastRun)}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Next run:</span>
+            <p className="font-mono text-foreground">{formatDateTime(task.nextRun)}</p>
+          </div>
+        </div>
+
+        {/* Run Now Button */}
         <Button
           variant="outline"
           size="sm"
           onClick={handleRunNow}
-          disabled={!schedule.enabled || isRunning}
-          className="rounded-lg flex-1 focus-visible:ring-2 focus-visible:ring-primary"
+          disabled={isRunning}
+          className="w-full rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
         >
           {isRunning ? (
             <>
@@ -143,72 +206,30 @@ function ScheduleCard({
             </>
           )}
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDelete}
-          className="h-8 w-8 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   )
 }
 
 export function TabSchedules() {
-  const [schedules, setSchedules] = React.useState<ScheduleItem[]>(mockSchedules)
+  const [tasks, setTasks] = React.useState<ScheduleTask[]>(defaultTasks)
   const [isSaving, setIsSaving] = React.useState(false)
-  const [showAddDialog, setShowAddDialog] = React.useState(false)
-  const [newSchedule, setNewSchedule] = React.useState<Partial<ScheduleItem>>({
-    name: "",
-    type: "discovery",
-    frequency: "daily",
-    time: "09:00",
-    enabled: true,
-  })
 
-  const handleToggle = (id: string, enabled: boolean) => {
-    setSchedules((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, enabled } : s))
+  const handleFrequencyChange = (id: string, frequency: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, frequency } : t))
     )
-  }
-
-  const handleDelete = (id: string) => {
-    setSchedules((prev) => prev.filter((s) => s.id !== id))
-    toast.success("Schedule deleted")
   }
 
   const handleRunNow = (id: string) => {
-    setSchedules((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, lastRun: new Date() } : s))
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, lastRun: new Date() }
+          : t
+      )
     )
-    toast.success("Schedule executed successfully")
-  }
-
-  const handleAddSchedule = () => {
-    if (!newSchedule.name || !newSchedule.type) return
-
-    const schedule: ScheduleItem = {
-      id: Date.now().toString(),
-      name: newSchedule.name,
-      type: newSchedule.type as ScheduleItem["type"],
-      frequency: newSchedule.frequency as ScheduleItem["frequency"],
-      time: newSchedule.time,
-      days: newSchedule.days,
-      enabled: true,
-      nextRun: new Date(Date.now() + 3600000),
-    }
-    setSchedules((prev) => [...prev, schedule])
-    setNewSchedule({
-      name: "",
-      type: "discovery",
-      frequency: "daily",
-      time: "09:00",
-      enabled: true,
-    })
-    setShowAddDialog(false)
-    toast.success("Schedule created")
+    toast.success("Task executed successfully")
   }
 
   const handleSave = async () => {
@@ -221,129 +242,22 @@ export function TabSchedules() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Schedules</h2>
-          <Badge variant="secondary">
-            {schedules.filter((s) => s.enabled).length} active
-          </Badge>
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">Schedules</h2>
         <p className="text-sm text-muted-foreground">
-          Configure automated schedules for job discovery, applications, and outreach.
+          Configure when automated tasks run. All times shown in your local timezone.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {schedules.map((schedule) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tasks.map((task) => (
           <ScheduleCard
-            key={schedule.id}
-            schedule={schedule}
-            onToggle={(enabled) => handleToggle(schedule.id, enabled)}
-            onDelete={() => handleDelete(schedule.id)}
-            onRunNow={() => handleRunNow(schedule.id)}
+            key={task.id}
+            task={task}
+            onFrequencyChange={(frequency) => handleFrequencyChange(task.id, frequency)}
+            onRunNow={() => handleRunNow(task.id)}
           />
         ))}
       </div>
-
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Schedule
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Schedule</DialogTitle>
-            <DialogDescription>
-              Set up a new automated schedule for your job search activities.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="scheduleName">Name</Label>
-              <Input
-                id="scheduleName"
-                value={newSchedule.name || ""}
-                onChange={(e) =>
-                  setNewSchedule({ ...newSchedule, name: e.target.value })
-                }
-                placeholder="e.g., Morning Discovery"
-                className="focus-visible:ring-2 focus-visible:ring-primary"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="scheduleType">Type</Label>
-                <Select
-                  value={newSchedule.type}
-                  onValueChange={(value) =>
-                    setNewSchedule({ ...newSchedule, type: value as ScheduleItem["type"] })
-                  }
-                >
-                  <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scheduleTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="scheduleFrequency">Frequency</Label>
-                <Select
-                  value={newSchedule.frequency}
-                  onValueChange={(value) =>
-                    setNewSchedule({ ...newSchedule, frequency: value as ScheduleItem["frequency"] })
-                  }
-                >
-                  <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {frequencies.map((freq) => (
-                      <SelectItem key={freq.value} value={freq.value}>
-                        {freq.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="scheduleTime">Time</Label>
-              <Input
-                id="scheduleTime"
-                type="time"
-                value={newSchedule.time || ""}
-                onChange={(e) =>
-                  setNewSchedule({ ...newSchedule, time: e.target.value })
-                }
-                className="focus-visible:ring-2 focus-visible:ring-primary"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddDialog(false)}
-              className="rounded-lg"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddSchedule}
-              disabled={!newSchedule.name}
-              className="rounded-lg"
-            >
-              Create Schedule
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <div className="flex justify-end">
         <Button

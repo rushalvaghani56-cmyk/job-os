@@ -1,145 +1,57 @@
 "use client"
 
 import * as React from "react"
-import { Save, Plus, Trash2, Edit2 } from "lucide-react"
+import { Save, Mail, Link2, Unlink, Check, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { mockEmailSettings } from "./mock-data"
-import type { EmailSettings, EmailTemplate } from "./types"
-
-const templateTypes = [
-  { value: "follow_up", label: "Follow Up" },
-  { value: "thank_you", label: "Thank You" },
-  { value: "cold_outreach", label: "Cold Outreach" },
-  { value: "referral", label: "Referral" },
-]
-
-function TemplateCard({
-  template,
-  onEdit,
-  onDelete,
-}: {
-  template: EmailTemplate
-  onEdit: () => void
-  onDelete: () => void
-}) {
-  const typeLabel = templateTypes.find((t) => t.value === template.type)?.label || template.type
-
-  return (
-    <div className="rounded-xl border bg-card p-4 transition-colors hover:bg-accent/50">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-foreground truncate">{template.name}</h4>
-            <Badge variant="secondary" className="text-xs shrink-0">
-              {typeLabel}
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">
-            {template.subject}
-          </p>
-        </div>
-        <div className="flex gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onEdit}
-            className="h-8 w-8 focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-            className="h-8 w-8 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { cn } from "@/lib/utils"
 
 export function TabEmail() {
-  const [settings, setSettings] = React.useState<EmailSettings>(mockEmailSettings)
+  const [isConnected, setIsConnected] = React.useState(true)
+  const [connectedEmail, setConnectedEmail] = React.useState("alex.johnson@gmail.com")
+  const [showDisconnectDialog, setShowDisconnectDialog] = React.useState(false)
+  const [isConnecting, setIsConnecting] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
-  const [showTemplateDialog, setShowTemplateDialog] = React.useState(false)
-  const [editingTemplate, setEditingTemplate] = React.useState<EmailTemplate | null>(null)
-  const [templateForm, setTemplateForm] = React.useState<Partial<EmailTemplate>>({
-    name: "",
-    subject: "",
-    body: "",
-    type: "follow_up",
-  })
 
-  const handleEditTemplate = (template: EmailTemplate) => {
-    setEditingTemplate(template)
-    setTemplateForm(template)
-    setShowTemplateDialog(true)
+  // Detection toggles
+  const [rejectionDetection, setRejectionDetection] = React.useState(true)
+  const [interviewDetection, setInterviewDetection] = React.useState(true)
+  const [confirmationDetection, setConfirmationDetection] = React.useState(true)
+
+  // Outreach config
+  const [emailDelay, setEmailDelay] = React.useState(3)
+  const [dailyOutreachLimit, setDailyOutreachLimit] = React.useState(20)
+  const [trackOpens, setTrackOpens] = React.useState(true)
+
+  const handleConnect = async () => {
+    setIsConnecting(true)
+    // Simulate OAuth flow
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    setIsConnected(true)
+    setConnectedEmail("alex.johnson@gmail.com")
+    setIsConnecting(false)
+    toast.success("Gmail connected successfully")
   }
 
-  const handleDeleteTemplate = (id: string) => {
-    setSettings({
-      ...settings,
-      templates: settings.templates.filter((t) => t.id !== id),
-    })
-    toast.success("Template deleted")
-  }
-
-  const handleSaveTemplate = () => {
-    if (!templateForm.name || !templateForm.subject || !templateForm.body) return
-
-    if (editingTemplate) {
-      setSettings({
-        ...settings,
-        templates: settings.templates.map((t) =>
-          t.id === editingTemplate.id
-            ? { ...t, ...templateForm } as EmailTemplate
-            : t
-        ),
-      })
-      toast.success("Template updated")
-    } else {
-      const newTemplate: EmailTemplate = {
-        id: Date.now().toString(),
-        name: templateForm.name,
-        subject: templateForm.subject,
-        body: templateForm.body,
-        type: templateForm.type as EmailTemplate["type"],
-      }
-      setSettings({
-        ...settings,
-        templates: [...settings.templates, newTemplate],
-      })
-      toast.success("Template created")
-    }
-
-    setEditingTemplate(null)
-    setTemplateForm({ name: "", subject: "", body: "", type: "follow_up" })
-    setShowTemplateDialog(false)
+  const handleDisconnect = () => {
+    setIsConnected(false)
+    setConnectedEmail("")
+    setShowDisconnectDialog(false)
+    toast.success("Gmail disconnected")
   }
 
   const handleSave = async () => {
@@ -154,213 +66,214 @@ export function TabEmail() {
       <div>
         <h2 className="text-lg font-semibold text-foreground">Email Settings</h2>
         <p className="text-sm text-muted-foreground">
-          Configure email preferences and manage your outreach templates.
+          Connect your email account and configure auto-detection patterns.
         </p>
       </div>
 
-      {/* General Email Settings */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-foreground">General Settings</h3>
-        
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="replyTo">Reply-To Address</Label>
-            <Input
-              id="replyTo"
-              type="email"
-              value={settings.replyTo}
-              onChange={(e) =>
-                setSettings({ ...settings, replyTo: e.target.value })
-              }
-              className="focus-visible:ring-2 focus-visible:ring-primary"
-            />
+      {/* Gmail OAuth Connection Card */}
+      <div className={cn(
+        "rounded-xl border p-6",
+        isConnected ? "bg-card" : "bg-muted/30"
+      )}>
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
+            <Mail className="h-6 w-6 text-red-500" />
           </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground">Gmail Account</h3>
+              {isConnected ? (
+                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                  <Check className="mr-1 h-3 w-3" />
+                  Connected
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20">
+                  Not Connected
+                </Badge>
+              )}
+            </div>
+            {isConnected ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Connected as <span className="font-medium text-foreground">{connectedEmail}</span>
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Connect your Gmail to send outreach emails and detect responses.
+              </p>
+            )}
+          </div>
+          {isConnected ? (
+            <Button
+              variant="outline"
+              onClick={() => setShowDisconnectDialog(true)}
+              className="shrink-0 rounded-lg text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Unlink className="mr-2 h-4 w-4" />
+              Disconnect
+            </Button>
+          ) : (
+            <Button
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className="shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {isConnecting ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin">⌛</span>
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Connect Gmail
+                </>
+              )}
+            </Button>
+          )}
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="signature">Default Signature</Label>
-          <Textarea
-            id="signature"
-            value={settings.defaultSignature}
-            onChange={(e) =>
-              setSettings({ ...settings, defaultSignature: e.target.value })
-            }
-            rows={3}
-            className="resize-none focus-visible:ring-2 focus-visible:ring-primary"
-          />
+      {/* Auto-Detection Patterns */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-medium text-foreground">Auto-Detection Patterns</h3>
+          <p className="text-xs text-muted-foreground">
+            Automatically detect and categorize incoming emails.
+          </p>
         </div>
-
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-xl border bg-card p-4">
             <div>
-              <Label htmlFor="sendCopy">Send Copy to Self</Label>
+              <Label htmlFor="rejectionDetection" className="font-medium">
+                Rejection Detection
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Receive a copy of all outgoing emails.
+                Detect rejection emails and update application status.
               </p>
             </div>
             <Switch
-              id="sendCopy"
-              checked={settings.sendCopyToSelf}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, sendCopyToSelf: checked })
-              }
+              id="rejectionDetection"
+              checked={rejectionDetection}
+              onCheckedChange={setRejectionDetection}
               className="focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
 
           <div className="flex items-center justify-between rounded-xl border bg-card p-4">
             <div>
-              <Label htmlFor="trackOpens">Track Email Opens</Label>
+              <Label htmlFor="interviewDetection" className="font-medium">
+                Interview Detection
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Know when recipients open your emails.
+                Detect interview invitations and add to calendar.
               </p>
             </div>
             <Switch
-              id="trackOpens"
-              checked={settings.trackOpens}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, trackOpens: checked })
-              }
+              id="interviewDetection"
+              checked={interviewDetection}
+              onCheckedChange={setInterviewDetection}
               className="focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
 
           <div className="flex items-center justify-between rounded-xl border bg-card p-4">
             <div>
-              <Label htmlFor="trackClicks">Track Link Clicks</Label>
+              <Label htmlFor="confirmationDetection" className="font-medium">
+                Confirmation Detection
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Know when recipients click links in your emails.
+                Detect application confirmations and update status.
               </p>
             </div>
             <Switch
-              id="trackClicks"
-              checked={settings.trackClicks}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, trackClicks: checked })
-              }
+              id="confirmationDetection"
+              checked={confirmationDetection}
+              onCheckedChange={setConfirmationDetection}
               className="focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
         </div>
       </div>
 
-      {/* Email Templates */}
+      {/* Outreach Sending Config */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-foreground">Email Templates</h3>
-          <Dialog open={showTemplateDialog} onOpenChange={(open) => {
-            setShowTemplateDialog(open)
-            if (!open) {
-              setEditingTemplate(null)
-              setTemplateForm({ name: "", subject: "", body: "", type: "follow_up" })
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
-                <Plus className="mr-2 h-3 w-3" />
-                Add Template
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingTemplate ? "Edit Template" : "Create Template"}
-                </DialogTitle>
-                <DialogDescription>
-                  Create reusable email templates for your outreach. Use {"{{name}}"}, {"{{company}}"}, {"{{position}}"} as placeholders.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="templateName">Name</Label>
-                    <Input
-                      id="templateName"
-                      value={templateForm.name || ""}
-                      onChange={(e) =>
-                        setTemplateForm({ ...templateForm, name: e.target.value })
-                      }
-                      placeholder="e.g., Initial Outreach"
-                      className="focus-visible:ring-2 focus-visible:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="templateType">Type</Label>
-                    <Select
-                      value={templateForm.type}
-                      onValueChange={(value) =>
-                        setTemplateForm({ ...templateForm, type: value as EmailTemplate["type"] })
-                      }
-                    >
-                      <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-primary">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templateTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="templateSubject">Subject</Label>
-                  <Input
-                    id="templateSubject"
-                    value={templateForm.subject || ""}
-                    onChange={(e) =>
-                      setTemplateForm({ ...templateForm, subject: e.target.value })
-                    }
-                    placeholder="e.g., Following up on {{position}} role"
-                    className="focus-visible:ring-2 focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="templateBody">Body</Label>
-                  <Textarea
-                    id="templateBody"
-                    value={templateForm.body || ""}
-                    onChange={(e) =>
-                      setTemplateForm({ ...templateForm, body: e.target.value })
-                    }
-                    placeholder="Hi {{name}},&#10;&#10;I wanted to reach out about..."
-                    rows={8}
-                    className="resize-none font-mono text-sm focus-visible:ring-2 focus-visible:ring-primary"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowTemplateDialog(false)}
-                  className="rounded-lg"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveTemplate}
-                  disabled={!templateForm.name || !templateForm.subject || !templateForm.body}
-                  className="rounded-lg"
-                >
-                  {editingTemplate ? "Update Template" : "Create Template"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div>
+          <h3 className="text-sm font-medium text-foreground">Outreach Sending Configuration</h3>
+          <p className="text-xs text-muted-foreground">
+            Control how outreach emails are sent.
+          </p>
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          {settings.templates.map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onEdit={() => handleEditTemplate(template)}
-              onDelete={() => handleDeleteTemplate(template.id)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="emailDelay">Delay Between Emails (minutes)</Label>
+            <Input
+              id="emailDelay"
+              type="number"
+              min={1}
+              max={60}
+              value={emailDelay}
+              onChange={(e) => setEmailDelay(parseInt(e.target.value) || 1)}
+              className="focus-visible:ring-2 focus-visible:ring-primary"
             />
-          ))}
+            <p className="text-xs text-muted-foreground">
+              Random delay of 1-{emailDelay} min between emails.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dailyLimit">Daily Outreach Limit</Label>
+            <Input
+              id="dailyLimit"
+              type="number"
+              min={1}
+              max={100}
+              value={dailyOutreachLimit}
+              onChange={(e) => setDailyOutreachLimit(parseInt(e.target.value) || 1)}
+              className="focus-visible:ring-2 focus-visible:ring-primary"
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum emails sent per day.
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Open Tracking */}
+      <div className="flex items-center justify-between rounded-xl border bg-card p-4">
+        <div>
+          <Label htmlFor="trackOpens" className="font-medium">
+            Open Tracking
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Track when recipients open your emails.
+          </p>
+        </div>
+        <Switch
+          id="trackOpens"
+          checked={trackOpens}
+          onCheckedChange={setTrackOpens}
+          className="focus-visible:ring-2 focus-visible:ring-primary"
+        />
+      </div>
+
+      {/* Template Management Link */}
+      <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-4">
+        <div>
+          <h3 className="font-medium text-foreground">Email Templates</h3>
+          <p className="text-xs text-muted-foreground">
+            Manage your outreach email templates.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          asChild
+          className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <a href="/email-hub">
+            Manage Templates
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </a>
+        </Button>
       </div>
 
       <div className="flex justify-end">
@@ -373,6 +286,27 @@ export function TabEmail() {
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
+
+      {/* Disconnect Confirmation Dialog */}
+      <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Gmail?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will disconnect your Gmail account from Job OS. You will no longer be able to send outreach emails or detect email responses automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDisconnect}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -11,7 +11,6 @@ import {
   Calendar,
   Mail,
   Flag,
-  Bell,
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TabGeneral } from "@/components/settings/tab-general"
@@ -23,7 +22,6 @@ import { TabSources } from "@/components/settings/tab-sources"
 import { TabSchedules } from "@/components/settings/tab-schedules"
 import { TabEmail } from "@/components/settings/tab-email"
 import { TabFeatureFlags } from "@/components/settings/tab-feature-flags"
-import { TabNotifications } from "@/components/settings/tab-notifications"
 import { cn } from "@/lib/utils"
 
 const tabs = [
@@ -35,7 +33,6 @@ const tabs = [
   { id: "sources", label: "Sources", icon: Globe, component: TabSources },
   { id: "schedules", label: "Schedules", icon: Calendar, component: TabSchedules },
   { id: "email", label: "Email", icon: Mail, component: TabEmail },
-  { id: "notifications", label: "Notifications", icon: Bell, component: TabNotifications },
   { id: "feature-flags", label: "Feature Flags", icon: Flag, component: TabFeatureFlags },
 ]
 
@@ -52,6 +49,32 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground">
           Manage your Job OS configuration and preferences.
         </p>
+      </div>
+
+      {/* Mobile Tab Navigation - Horizontal scrollable */}
+      <div className="border-b bg-background md:hidden overflow-x-auto">
+        <div className="flex gap-1 px-4 py-2 min-w-max">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Main Content */}
@@ -86,7 +109,7 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <ScrollArea className="flex-1">
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <ActiveComponent />
           </div>
         </ScrollArea>

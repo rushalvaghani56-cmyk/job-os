@@ -1,15 +1,73 @@
 "use client"
 
 import * as React from "react"
-import { Save, Beaker } from "lucide-react"
+import { Save, GraduationCap, Users, TrendingUp, Linkedin, Github, Heart, MailSearch } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { mockFeatureFlags } from "./mock-data"
-import type { FeatureFlag } from "./types"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
+
+interface FeatureFlag {
+  id: string
+  name: string
+  description: string
+  enabled: boolean
+  icon: LucideIcon
+}
+
+const defaultFlags: FeatureFlag[] = [
+  {
+    id: "1",
+    name: "Interview Preparation",
+    description: "Generate prep packs and practice questions",
+    enabled: true,
+    icon: GraduationCap,
+  },
+  {
+    id: "2",
+    name: "Recruiter Outreach",
+    description: "Discover and contact recruiters automatically",
+    enabled: true,
+    icon: Users,
+  },
+  {
+    id: "3",
+    name: "Market Intelligence",
+    description: "Trending skills, salary data, and hiring velocity",
+    enabled: true,
+    icon: TrendingUp,
+  },
+  {
+    id: "4",
+    name: "LinkedIn Optimizer",
+    description: "Audit and improve your LinkedIn profile",
+    enabled: false,
+    icon: Linkedin,
+  },
+  {
+    id: "5",
+    name: "GitHub Intelligence",
+    description: "Analyze and improve your GitHub presence",
+    enabled: false,
+    icon: Github,
+  },
+  {
+    id: "6",
+    name: "Wellbeing Shield",
+    description: "Activity monitoring and burnout prevention",
+    enabled: true,
+    icon: Heart,
+  },
+  {
+    id: "7",
+    name: "Email Intelligence",
+    description: "Detect rejections, interviews, and recruiter replies",
+    enabled: true,
+    icon: MailSearch,
+  },
+]
 
 function FeatureFlagCard({
   flag,
@@ -18,16 +76,28 @@ function FeatureFlagCard({
   flag: FeatureFlag
   onToggle: (enabled: boolean) => void
 }) {
+  const Icon = flag.icon
+
   return (
     <div
       className={cn(
-        "rounded-xl border p-4 transition-colors",
-        flag.enabled ? "bg-card" : "bg-muted/30"
+        "rounded-xl border p-5 transition-all",
+        flag.enabled
+          ? "bg-card border-border"
+          : "bg-muted/30 border-muted"
       )}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+        <div className="flex items-start gap-3">
+          <div className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg shrink-0",
+            flag.enabled
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground"
+          )}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
             <Label
               htmlFor={`flag-${flag.id}`}
               className={cn(
@@ -37,25 +107,16 @@ function FeatureFlagCard({
             >
               {flag.name}
             </Label>
-            {flag.beta && (
-              <Badge
-                variant="secondary"
-                className="gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-              >
-                <Beaker className="h-3 w-3" />
-                Beta
-              </Badge>
-            )}
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {flag.description}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {flag.description}
-          </p>
         </div>
         <Switch
           id={`flag-${flag.id}`}
           checked={flag.enabled}
           onCheckedChange={onToggle}
-          className="focus-visible:ring-2 focus-visible:ring-primary"
+          className="shrink-0 focus-visible:ring-2 focus-visible:ring-primary"
         />
       </div>
     </div>
@@ -63,16 +124,24 @@ function FeatureFlagCard({
 }
 
 export function TabFeatureFlags() {
-  const [flags, setFlags] = React.useState<FeatureFlag[]>(mockFeatureFlags)
+  const [flags, setFlags] = React.useState<FeatureFlag[]>(defaultFlags)
   const [isSaving, setIsSaving] = React.useState(false)
 
   const enabledCount = flags.filter((f) => f.enabled).length
-  const betaCount = flags.filter((f) => f.beta).length
 
   const handleToggle = (id: string, enabled: boolean) => {
     setFlags((prev) =>
       prev.map((f) => (f.id === id ? { ...f, enabled } : f))
     )
+    
+    const flag = flags.find((f) => f.id === id)
+    if (flag) {
+      if (enabled) {
+        toast.success(`${flag.name} enabled. Added to navigation.`)
+      } else {
+        toast.success(`${flag.name} disabled. Hidden from navigation.`)
+      }
+    }
   }
 
   const handleSave = async () => {
@@ -82,64 +151,33 @@ export function TabFeatureFlags() {
     toast.success("Feature flags saved")
   }
 
-  const stableFlags = flags.filter((f) => !f.beta)
-  const betaFlags = flags.filter((f) => f.beta)
-
   return (
     <div className="space-y-6">
       <div>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Feature Flags</h2>
-          <div className="flex gap-2">
-            <Badge variant="secondary">
-              {enabledCount} enabled
-            </Badge>
-            <Badge variant="secondary" className="gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
-              <Beaker className="h-3 w-3" />
-              {betaCount} beta
-            </Badge>
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {enabledCount} of {flags.length} enabled
+          </span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Enable or disable features in Job OS. Beta features may be unstable.
+          Enable or disable feature modules. Disabled modules are hidden from navigation but data is preserved.
         </p>
       </div>
 
-      {/* Stable Features */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-foreground">Stable Features</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {stableFlags.map((flag) => (
-            <FeatureFlagCard
-              key={flag.id}
-              flag={flag}
-              onToggle={(enabled) => handleToggle(flag.id, enabled)}
-            />
-          ))}
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {flags.map((flag) => (
+          <FeatureFlagCard
+            key={flag.id}
+            flag={flag}
+            onToggle={(enabled) => handleToggle(flag.id, enabled)}
+          />
+        ))}
       </div>
 
-      {/* Beta Features */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-foreground">Beta Features</h3>
-          <Badge variant="outline" className="text-xs">
-            Experimental
-          </Badge>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          These features are still in development. They may change or be removed.
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {betaFlags.map((flag) => (
-            <FeatureFlagCard
-              key={flag.id}
-              flag={flag}
-              onToggle={(enabled) => handleToggle(flag.id, enabled)}
-            />
-          ))}
-        </div>
-      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        Disabled modules are hidden from navigation. Data is preserved.
+      </p>
 
       <div className="flex justify-end">
         <Button
