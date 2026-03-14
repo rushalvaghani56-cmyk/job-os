@@ -24,7 +24,7 @@ export default function NotFound() {
 
       <div className="flex items-center gap-3">
         <Button variant="default" asChild>
-          <Link href="/home" className="gap-2">
+          <Link href="/dashboard" className="gap-2">
             <Home className="h-4 w-4" />
             Go Home
           </Link>

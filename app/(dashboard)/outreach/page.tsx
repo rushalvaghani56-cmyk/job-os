@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Search, Plus, Filter, Users, Loader2, UserPlus, Linkedin } from "lucide-react"
 import { ContactCard } from "@/components/outreach/contact-card"
 import { ContactDetail, EmptyContactDetail } from "@/components/outreach/contact-detail"
