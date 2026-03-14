@@ -40,7 +40,7 @@ interface NavItem {
 }
 
 const bottomNavItems: NavItem[] = [
-  { label: "Home", href: "/dashboard", icon: Home },
+  { label: "Home", href: "/home", icon: Home },
   { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12 },
   { label: "Review", href: "/review", icon: ClipboardCheck, badge: 24 },
   { label: "Applications", href: "/applications", icon: Send },

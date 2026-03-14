@@ -20,7 +20,9 @@ interface ScoreBadgeProps {
  * 85-100: Green, 70-84: Blue, 60-69: Amber, <60: Gray
  * Dream companies get purple border and star icon
  */
-export function ScoreBadge({ score, size = "md", isDream = false, className }: ScoreBadgeProps) {
+export function ScoreBadge({ score, size = "md", isDream = false, isDreamCompany = false, className }: ScoreBadgeProps & { isDreamCompany?: boolean }) {
+  // Support both isDream and isDreamCompany for backwards compatibility
+  const showDream = isDream || isDreamCompany;
   const getScoreStyles = () => {
     if (score >= 85) {
       return "bg-emerald-500 text-white";
@@ -53,12 +55,39 @@ export function ScoreBadge({ score, size = "md", isDream = false, className }: S
         "inline-flex items-center justify-center gap-1 rounded-full font-mono font-semibold",
         getScoreStyles(),
         getSizeStyles(),
-        isDream && "ring-2 ring-violet-500 ring-offset-2 ring-offset-background",
+        showDream && "ring-2 ring-violet-500 ring-offset-2 ring-offset-background",
         className
       )}
     >
-      {isDream && <Star className="h-3 w-3 fill-current" />}
+      {showDream && <Star className="h-3 w-3 fill-current" />}
       {score}
     </div>
   );
+}
+
+interface DecisionBadgeProps {
+  decision: "auto" | "review" | "skip"
+}
+
+export function DecisionBadge({ decision }: DecisionBadgeProps) {
+  const styles = {
+    auto: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30",
+    review: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    skip: "bg-muted text-muted-foreground border-border",
+  }
+
+  const labels = {
+    auto: "Auto-apply",
+    review: "Review",
+    skip: "Skip",
+  }
+
+  return (
+    <span className={cn(
+      "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border",
+      styles[decision]
+    )}>
+      {labels[decision]}
+    </span>
+  )
 }

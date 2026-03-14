@@ -74,7 +74,7 @@ export default function SignupPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard")
+      router.replace("/home")
     }
   }, [isAuthenticated, router])
 

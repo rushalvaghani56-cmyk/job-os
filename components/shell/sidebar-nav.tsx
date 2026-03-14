@@ -41,7 +41,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { label: "Home", href: "/dashboard", icon: Home },
+  { label: "Home", href: "/home", icon: Home },
   { label: "Jobs", href: "/jobs", icon: Briefcase, badge: 12, badgeColor: "green" },
   { label: "Review Queue", href: "/review", icon: ClipboardCheck, badge: 24, badgeColor: "amber" },
   { label: "Applications", href: "/applications", icon: Send, badge: 8, badgeColor: "blue" },
@@ -160,7 +160,7 @@ export function SidebarNav() {
         )}
       >
         {!sidebarCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <Link href="/home" className="flex items-center gap-2 font-semibold">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Briefcase className="h-4 w-4" />
             </div>

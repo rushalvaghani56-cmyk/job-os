@@ -23,7 +23,7 @@ export function PublicGuard({ children }: PublicGuardProps) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push("/dashboard")
+      router.push("/home")
     }
   }, [isLoading, isAuthenticated, router])
 

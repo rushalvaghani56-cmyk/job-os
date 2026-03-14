@@ -8,7 +8,7 @@ export { SectionErrorBoundary } from "./section-error-boundary";
 export { LoadingSkeleton } from "./loading-skeleton";
 export { EmptyState } from "./empty-state";
 export { ConfirmDialog } from "./confirm-dialog";
-export { ScoreBadge } from "./score-badge";
+export { ScoreBadge, DecisionBadge } from "./score-badge";
 export { StatusPill } from "./status-pill";
 export { PriorityTag } from "./priority-tag";
 export { WarmthIndicator } from "./warmth-indicator";

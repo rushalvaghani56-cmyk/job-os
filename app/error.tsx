@@ -41,7 +41,7 @@ export default function Error({
           Try Again
         </Button>
         <Button variant="outline" asChild>
-          <Link href="/dashboard" className="gap-2">
+          <Link href="/home" className="gap-2">
             <Home className="h-4 w-4" />
             Go Home
           </Link>

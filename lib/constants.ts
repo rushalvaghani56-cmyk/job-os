@@ -30,7 +30,7 @@ export const ROUTES = {
   ONBOARDING_STEP: (step: number) => `/onboarding?step=${step}`,
 
   // Dashboard
-  DASHBOARD: "/dashboard",
+  DASHBOARD: "/home",
   JOBS: "/jobs",
   JOB_DETAIL: (id: string) => `/jobs/${id}`,
   REVIEW: "/review",
@@ -42,7 +42,7 @@ export const ROUTES = {
   MARKET: "/market",
   SETTINGS: "/settings",
   PROFILES: "/profiles",
-  FILES: "/documents",
+  FILES: "/files",
   ACTIVITY: "/activity",
   CHANGELOG: "/changelog",
   NOTIFICATIONS: "/notifications",

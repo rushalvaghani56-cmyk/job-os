@@ -121,8 +121,6 @@ class RealtimeManager {
         break;
     }
 
-    // Log for debugging
-    console.log(`[Realtime] ${table} ${payload.eventType}:`, payload);
   }
 
   /**

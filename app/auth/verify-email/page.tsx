@@ -17,7 +17,7 @@ export default function VerifyEmailPage() {
   // Redirect if already authenticated and onboarding complete
   React.useEffect(() => {
     if (isAuthenticated && hasCompletedOnboarding) {
-      router.replace("/dashboard")
+      router.replace("/home")
     }
   }, [isAuthenticated, hasCompletedOnboarding, router])
 

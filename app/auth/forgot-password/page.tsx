@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard")
+      router.replace("/home")
     }
   }, [isAuthenticated, router])
   const [isSubmitted, setIsSubmitted] = React.useState(false)

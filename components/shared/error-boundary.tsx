@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 Retry
               </Button>
               <Button asChild variant="outline">
-                <Link href="/dashboard">
+                <Link href="/home">
                   <Home className="mr-2 h-4 w-4" />
                   Go Home
                 </Link>
