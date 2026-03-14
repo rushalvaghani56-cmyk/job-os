@@ -197,7 +197,7 @@ export function FilterSidebar({ filters, onFiltersChange, isCollapsed, onToggleC
   }
 
   return (
-    <div className="w-[280px] border-r border-border bg-surface flex flex-col">
+    <div className="hidden md:flex w-[280px] border-r border-border bg-surface flex-col">
       <div className="flex items-center justify-between p-4 border-b border-border">
         <h2 className="text-sm font-semibold">Filters</h2>
         <Button

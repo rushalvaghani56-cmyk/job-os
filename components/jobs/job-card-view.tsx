@@ -118,7 +118,7 @@ function JobCard({ job }: { job: Job }) {
   
   return (
     <Card className={cn(
-      "p-4 hover:shadow-md transition-shadow group cursor-pointer",
+      "p-4 hover:shadow-md transition-all duration-200 group cursor-pointer",
       job.isBlacklisted && "opacity-50",
       job.isPotentialScam && "border-red-500/30 bg-red-500/5",
       job.company.isDreamCompany && "ring-2 ring-violet-400"
@@ -230,7 +230,7 @@ function JobCard({ job }: { job: Job }) {
         </div>
 
         {/* Quick Actions (on hover) */}
-        <div className="flex items-center gap-1 pt-2 opacity-0 group-hover:opacity-100 transition-opacity border-t border-border">
+        <div className="flex items-center gap-1 pt-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 border-t border-border">
           <Button
             variant="ghost"
             size="sm"

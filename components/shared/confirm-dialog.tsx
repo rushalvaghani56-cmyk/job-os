@@ -68,6 +68,7 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={isLoading}
             className={cn(
+              "transition-all duration-200",
               variant === "destructive" &&
                 "bg-destructive text-destructive-foreground hover:bg-destructive/90"
             )}

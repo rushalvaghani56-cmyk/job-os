@@ -245,7 +245,7 @@ export default function OnboardingStep3() {
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-4 pt-2 pb-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="linkedin">LinkedIn URL *</Label>
                       <Input
@@ -611,7 +611,7 @@ export default function OnboardingStep3() {
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-4 pt-2 pb-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label>Resume Tone</Label>
                       <Select value={resumeTone} onValueChange={setResumeTone}>

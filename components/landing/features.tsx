@@ -69,16 +69,16 @@ export function Features() {
           {features.map((feature) => (
             <Card
               key={feature.title}
-              className="rounded-xl border-border bg-card p-5 transition-shadow hover:shadow-md"
+              className="rounded-xl border-border bg-card p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
             >
               <CardContent className="flex flex-col gap-3 p-0">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <feature.icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="text-sm font-semibold text-card-foreground">
+                <h3 className="text-sm sm:text-base font-semibold text-card-foreground">
                   {feature.title}
                 </h3>
-                <p className="text-xs leading-relaxed text-muted-foreground">
+                <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
               </CardContent>

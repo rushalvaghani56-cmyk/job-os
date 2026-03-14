@@ -97,8 +97,8 @@ export function QuickActions({ isLoading = false }: QuickActionsProps) {
                 variant="outline"
                 onClick={action.onClick}
                 className={cn(
-                  "h-auto flex-col gap-2 p-4 rounded-xl",
-                  "hover:bg-muted/50"
+                  "h-auto flex-col gap-2 p-4 rounded-xl transition-all duration-200",
+                  "hover:bg-muted/50 hover:shadow-sm active:scale-[0.98]"
                 )}
               >
                 <Icon className="h-5 w-5 text-primary" />

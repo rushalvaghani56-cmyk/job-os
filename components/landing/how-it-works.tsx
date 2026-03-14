@@ -61,7 +61,7 @@ export function HowItWorks() {
                 </div>
                 
                 {/* Step content */}
-                <div className="mt-4 max-w-[140px]">
+                <div className="mt-4 max-w-[160px] sm:max-w-[140px]">
                   <h3 className="text-sm font-semibold text-foreground">
                     {step.title}
                   </h3>

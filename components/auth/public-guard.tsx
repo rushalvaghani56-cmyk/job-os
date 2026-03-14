@@ -11,7 +11,7 @@ interface PublicGuardProps {
 
 function LoadingScreen() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+    <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center gap-4 bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   )

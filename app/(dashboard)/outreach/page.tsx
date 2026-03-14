@@ -98,7 +98,7 @@ export default function OutreachPage() {
     : null
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col h-[calc(100dvh-3.5rem)]">
       {/* Header */}
       <div className="shrink-0 p-5 border-b border-border">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -125,7 +125,7 @@ export default function OutreachPage() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger className="w-[140px] rounded-lg">
+              <SelectTrigger className="w-auto min-w-[100px] sm:w-[140px] rounded-lg">
                 <SelectValue placeholder="Company" />
               </SelectTrigger>
               <SelectContent>
@@ -139,7 +139,7 @@ export default function OutreachPage() {
             </Select>
 
             <Select value={warmthFilter} onValueChange={setWarmthFilter}>
-              <SelectTrigger className="w-[120px] rounded-lg">
+              <SelectTrigger className="w-auto min-w-[100px] sm:w-[120px] rounded-lg">
                 <SelectValue placeholder="Warmth" />
               </SelectTrigger>
               <SelectContent>
@@ -151,7 +151,7 @@ export default function OutreachPage() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] rounded-lg">
+              <SelectTrigger className="w-auto min-w-[100px] sm:w-[140px] rounded-lg">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>

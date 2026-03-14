@@ -101,7 +101,7 @@ export default function OnboardingStep4() {
       </div>
 
       <Card className="rounded-xl shadow-sm">
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-semibold">Master Resumes</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -137,7 +137,7 @@ export default function OnboardingStep4() {
                 onDragLeave={() => setIsDragging(false)}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer",
+                  "flex flex-col items-center justify-center gap-4 p-4 sm:p-8 rounded-xl border-2 border-dashed cursor-pointer",
                   "transition-all hover:border-primary hover:bg-primary/5",
                   isDragging && "border-primary bg-primary/10"
                 )}

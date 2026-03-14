@@ -111,7 +111,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         className="w-full rounded-lg"
         disabled={isLoading}
       >
-        <GoogleIcon className="size-4" />
+        <GoogleIcon className="size-4 mr-2" />
         Continue with Google
       </Button>
 

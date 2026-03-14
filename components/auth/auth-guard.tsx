@@ -13,7 +13,7 @@ interface AuthGuardProps {
 
 function LoadingScreen() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+    <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center gap-4 bg-background">
       <div className="flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
           <span className="font-mono text-lg font-bold text-primary-foreground">JO</span>
@@ -28,7 +28,7 @@ function LoadingScreen() {
 
 function AccessDenied() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+    <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center gap-4 bg-background">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
         <span className="text-2xl">🔒</span>
       </div>

@@ -300,7 +300,7 @@ export default function OnboardingStep1() {
                   )}
                 </Field>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field>
                     <Label htmlFor="currentTitle">Current Title</Label>
                     <Input
@@ -503,7 +503,7 @@ export default function OnboardingStep1() {
 
               <Field>
                 <Label>Salary Range</Label>
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
                   <Controller
                     name="salaryCurrency"
                     control={control}

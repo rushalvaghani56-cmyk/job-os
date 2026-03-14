@@ -166,7 +166,7 @@ export default function OnboardingStep2() {
         </div>
 
         <Card className="rounded-xl shadow-sm">
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="mb-6 text-center">
               <h2 className="text-2xl font-semibold">Import Your Data</h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -174,7 +174,7 @@ export default function OnboardingStep2() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
               {importOptions.map((option) => {
                 const Icon = option.icon
                 return (
@@ -223,7 +223,7 @@ export default function OnboardingStep2() {
         </div>
 
         <Card className="rounded-xl shadow-sm">
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-semibold">Enter Your Details</h2>
@@ -289,7 +289,7 @@ export default function OnboardingStep2() {
       </div>
 
       <Card className="rounded-xl shadow-sm">
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-semibold">{selectedOption?.label}</h2>

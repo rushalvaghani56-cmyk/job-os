@@ -188,7 +188,7 @@ export function SidebarNav() {
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-4">
         <div className="space-y-1">
           {mainNavItems.map((item) => (
             <NavItemComponent key={item.href} item={item} collapsed={sidebarCollapsed} />

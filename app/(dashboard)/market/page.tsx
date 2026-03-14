@@ -517,7 +517,7 @@ export default function MarketIntelligencePage() {
 
           {/* Profile Filter */}
           <Select value={profile} onValueChange={setProfile}>
-            <SelectTrigger className="w-[140px] rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
+            <SelectTrigger className="w-auto min-w-[100px] sm:w-[140px] rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
               <Filter className="mr-2 size-4" />
               <SelectValue placeholder="Profile" />
             </SelectTrigger>
@@ -538,7 +538,7 @@ export default function MarketIntelligencePage() {
             <CardTitle className="text-base font-semibold">Trending Skills</CardTitle>
             <div className="flex gap-2">
               <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="h-8 w-[130px] rounded-lg text-xs">
+                <SelectTrigger className="h-8 w-auto min-w-[100px] sm:w-[130px] rounded-lg text-xs">
                   <SelectValue placeholder="Role Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -549,7 +549,7 @@ export default function MarketIntelligencePage() {
                 </SelectContent>
               </Select>
               <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger className="h-8 w-[130px] rounded-lg text-xs">
+                <SelectTrigger className="h-8 w-auto min-w-[100px] sm:w-[130px] rounded-lg text-xs">
                   <SelectValue placeholder="Location" />
                 </SelectTrigger>
                 <SelectContent>
