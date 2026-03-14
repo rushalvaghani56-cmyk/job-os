@@ -20,13 +20,12 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type ActionPriority = "dream" | "high" | "medium"
 type ActionType = "dream-match" | "review" | "follow-up" | "failed" | "interview-prep"
 
 interface ActionItem {
   id: string
   type: ActionType
-  priority: ActionPriority
+  priority: 1 | 2 | 3
   title: string
   company: string
   companyLogo?: string
@@ -44,11 +43,12 @@ const typeIcons: Record<ActionType, typeof Star> = {
 }
 
 // Mock data matching the spec
+// Priority: 1 = Dream, 2 = High, 3 = Medium
 const actionItems: ActionItem[] = [
   {
     id: "1",
     type: "dream-match",
-    priority: "dream",
+    priority: 1, // Dream
     title: "Stripe — Platform Engineer scored 91",
     company: "Stripe",
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h ago
@@ -58,7 +58,7 @@ const actionItems: ActionItem[] = [
   {
     id: "2",
     type: "review",
-    priority: "high",
+    priority: 2, // High
     title: "Resume ready: Google — SWE III",
     company: "Google",
     timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4h ago
@@ -68,7 +68,7 @@ const actionItems: ActionItem[] = [
   {
     id: "3",
     type: "failed",
-    priority: "high",
+    priority: 2, // High
     title: "Submission failed: Amazon",
     company: "Amazon",
     timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6h ago
@@ -78,7 +78,7 @@ const actionItems: ActionItem[] = [
   {
     id: "4",
     type: "follow-up",
-    priority: "medium",
+    priority: 3, // Medium
     title: "Follow-up due: Razorpay recruiter",
     company: "Razorpay",
     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1d ago
@@ -88,7 +88,7 @@ const actionItems: ActionItem[] = [
   {
     id: "5",
     type: "interview-prep",
-    priority: "medium",
+    priority: 3, // Medium
     title: "Interview prep: Meta — Day 12",
     company: "Meta",
     timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2d ago
