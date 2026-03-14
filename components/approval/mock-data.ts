@@ -110,6 +110,57 @@ export const mockApprovalItems: ApprovalItem[] = [
     qualityScore: 76,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
   },
+  {
+    id: "9",
+    type: "resume",
+    priority: "medium",
+    status: "pending",
+    jobId: "job-8",
+    jobTitle: "Software Architect",
+    company: "Datadog",
+    companyLogo: "D",
+    qualityScore: 72,
+    createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000),
+    variant: "A",
+    template: "Technical Focus",
+  },
+  {
+    id: "10",
+    type: "cover_letter",
+    priority: "medium",
+    status: "pending",
+    jobId: "job-9",
+    jobTitle: "Frontend Architect",
+    company: "Shopify",
+    companyLogo: "Sh",
+    qualityScore: 68,
+    createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000),
+    template: "Conversational",
+  },
+  {
+    id: "11",
+    type: "email",
+    priority: "high",
+    status: "pending",
+    jobId: "job-10",
+    jobTitle: "Lead Engineer",
+    company: "Plaid",
+    companyLogo: "P",
+    qualityScore: 86,
+    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+  },
+  {
+    id: "12",
+    type: "answer",
+    priority: "medium",
+    status: "pending",
+    jobId: "job-11",
+    jobTitle: "Staff Software Engineer",
+    company: "Twilio",
+    companyLogo: "T",
+    qualityScore: 58,
+    createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000),
+  },
 ]
 
 export const mockResumeContent: ResumeContent = {
@@ -202,6 +253,47 @@ Best regards,
     { start: 456, end: 462, text: "Stripe" },
     { start: 678, end: 684, text: "Stripe" },
   ],
+}
+
+export const mockAnswerContent = {
+  question: "Describe a time when you had to make a difficult technical decision with incomplete information. What was the situation, how did you approach it, and what was the outcome?",
+  answer: `During my time at TechCorp, I faced a critical decision about our real-time data pipeline architecture when we discovered our existing solution couldn't scale to meet our projected 10x traffic growth.
+
+With limited time before a major product launch and incomplete performance data from our vendors, I had to choose between:
+1. Building a custom solution using Kafka and Flink
+2. Adopting a managed service (AWS Kinesis)
+3. Scaling our existing RabbitMQ setup
+
+I approached this by:
+- Running quick proof-of-concept tests for each option over 3 days
+- Consulting with our DevOps team about operational complexity
+- Analyzing cost projections based on best and worst-case scenarios
+- Talking to engineering contacts at companies who had faced similar decisions
+
+Despite incomplete vendor data, I recommended the custom Kafka solution because:
+- Our POC showed 40% better throughput
+- We had team expertise in JVM technologies
+- Long-term costs were more predictable
+
+The outcome was successful: we launched on time, handled 15x our original traffic during peak, and the architecture has scaled reliably for 2+ years. The key lesson was making a "reversible" decision—we designed the system with abstraction layers that would allow us to swap backends if needed.`,
+  confidence: "high" as const,
+  wordCount: 187,
+  sources: ["Work Experience", "Technical Projects", "Profile Skills"],
+}
+
+export const mockAnswerContentLowConfidence = {
+  question: "What experience do you have with WebGL and 3D graphics programming?",
+  answer: `While my direct experience with WebGL is limited, I have a strong foundation that would help me learn quickly:
+
+- I've worked extensively with canvas APIs and 2D graphics
+- I understand shader programming concepts from academic coursework
+- I've built data visualizations using D3.js and SVG
+- I have strong mathematical background in linear algebra
+
+I'm excited about the opportunity to develop deeper WebGL expertise in this role.`,
+  confidence: "low" as const,
+  wordCount: 72,
+  sources: ["Profile Skills"],
 }
 
 export const mockOutreachContent: OutreachContent = {

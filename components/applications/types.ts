@@ -1,8 +1,6 @@
 export type ApplicationStatus =
-  | "discovered"
-  | "scored"
-  | "in_review"
-  | "applied"
+  | "pending"
+  | "submitted"
   | "screening"
   | "interview"
   | "offer"
@@ -28,6 +26,7 @@ export interface Application {
   interviewDate?: Date
   interviewProbability?: number
   notes?: string
+  source?: string
 }
 
 export interface ApplicationColumn {
@@ -46,10 +45,8 @@ export interface CalendarEvent {
 }
 
 export const APPLICATION_COLUMNS: ApplicationColumn[] = [
-  { id: "discovered", label: "Discovered", color: "bg-slate-500" },
-  { id: "scored", label: "Scored", color: "bg-blue-500" },
-  { id: "in_review", label: "In Review", color: "bg-indigo-500" },
-  { id: "applied", label: "Applied", color: "bg-violet-500" },
+  { id: "pending", label: "Pending", color: "bg-slate-500" },
+  { id: "submitted", label: "Submitted", color: "bg-blue-500" },
   { id: "screening", label: "Screening", color: "bg-amber-500" },
   { id: "interview", label: "Interview", color: "bg-emerald-500" },
   { id: "offer", label: "Offer", color: "bg-green-500" },
