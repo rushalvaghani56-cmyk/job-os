@@ -1208,7 +1208,7 @@ export default function EmailPage() {
                   </h4>
                   <p className="text-sm text-muted-foreground">
                     We only scan for job-related emails matching specific patterns (rejections, interview invites, confirmations, recruiter replies). Nothing else is read or stored. You can disconnect at any time and all synced data will be removed.{" "}
-                    <a href="#" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+                    <a href="/settings/security" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
                       Learn More
                     </a>
                   </p>
