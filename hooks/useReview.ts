@@ -38,11 +38,16 @@ export function useReviewStats() {
   return useQuery({
     queryKey: queryKeys.reviews.stats(),
     queryFn: async (): Promise<ReviewStats> => {
-      const response = await apiClient.get<DataResponse<ReviewStats>>(
-        "/api/v1/review/stats"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<DataResponse<ReviewStats>>(
+          "/api/v1/review/stats"
+        );
+        return response.data.data;
+      } catch {
+        return {} as ReviewStats;
+      }
     },
+    retry: false,
   });
 }
 

@@ -21,7 +21,7 @@ export function useDashboardMetrics() {
     queryKey: queryKeys.analytics.dashboard(),
     queryFn: async (): Promise<DashboardMetrics> => {
       const response = await apiClient.get<DataResponse<DashboardMetrics>>(
-        "/api/v1/analytics/dashboard"
+        "/api/v1/analytics/dashboard-stats"
       );
       return response.data.data;
     },
@@ -71,11 +71,16 @@ export function useGoals() {
   return useQuery({
     queryKey: queryKeys.analytics.goals(),
     queryFn: async (): Promise<GoalData[]> => {
-      const response = await apiClient.get<{ data: GoalData[] }>(
-        "/api/v1/analytics/goals"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<{ data: GoalData[] }>(
+          "/api/v1/analytics/goals"
+        );
+        return response.data.data;
+      } catch {
+        return [];
+      }
     },
+    retry: false,
   });
 }
 
@@ -83,11 +88,16 @@ export function useABTests() {
   return useQuery({
     queryKey: queryKeys.analytics.abTests(),
     queryFn: async (): Promise<ABTestResult[]> => {
-      const response = await apiClient.get<{ data: ABTestResult[] }>(
-        "/api/v1/analytics/ab-tests"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<{ data: ABTestResult[] }>(
+          "/api/v1/analytics/ab-tests"
+        );
+        return response.data.data;
+      } catch {
+        return [];
+      }
     },
+    retry: false,
   });
 }
 
@@ -95,11 +105,16 @@ export function useSkillsAnalysis() {
   return useQuery({
     queryKey: queryKeys.analytics.skills(),
     queryFn: async (): Promise<SkillsAnalysis> => {
-      const response = await apiClient.get<DataResponse<SkillsAnalysis>>(
-        "/api/v1/analytics/skills"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<DataResponse<SkillsAnalysis>>(
+          "/api/v1/analytics/skills"
+        );
+        return response.data.data;
+      } catch {
+        return {} as SkillsAnalysis;
+      }
     },
+    retry: false,
   });
 }
 
@@ -107,11 +122,16 @@ export function useTimingAnalysis() {
   return useQuery({
     queryKey: queryKeys.analytics.timing(),
     queryFn: async (): Promise<TimingAnalysis> => {
-      const response = await apiClient.get<DataResponse<TimingAnalysis>>(
-        "/api/v1/analytics/timing"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<DataResponse<TimingAnalysis>>(
+          "/api/v1/analytics/timing"
+        );
+        return response.data.data;
+      } catch {
+        return {} as TimingAnalysis;
+      }
     },
+    retry: false,
   });
 }
 

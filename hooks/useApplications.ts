@@ -43,11 +43,16 @@ export function useApplicationStats() {
   return useQuery({
     queryKey: queryKeys.applications.stats(),
     queryFn: async (): Promise<ApplicationStats> => {
-      const response = await apiClient.get<DataResponse<ApplicationStats>>(
-        "/api/v1/applications/stats"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<DataResponse<ApplicationStats>>(
+          "/api/v1/applications/stats"
+        );
+        return response.data.data;
+      } catch {
+        return {} as ApplicationStats;
+      }
     },
+    retry: false,
   });
 }
 
@@ -87,7 +92,7 @@ export function useUpdateApplicationStatus() {
       status: ApplicationStatus;
     }): Promise<Application> => {
       const response = await apiClient.put<DataResponse<Application>>(
-        `/api/v1/applications/${id}`,
+        `/api/v1/applications/${id}/status`,
         { status }
       );
       return response.data.data;

@@ -37,10 +37,10 @@ export function useProfileCompleteness(profileId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.profiles.completeness(profileId!),
     queryFn: async (): Promise<ProfileCompleteness> => {
-      const response = await apiClient.get<DataResponse<ProfileCompleteness>>(
+      const response = await apiClient.get<ProfileCompleteness>(
         `/api/v1/profiles/${profileId}/completeness`
       );
-      return response.data.data;
+      return response.data;
     },
     enabled: !!profileId,
   });

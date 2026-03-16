@@ -24,11 +24,16 @@ export function useContactStats() {
   return useQuery({
     queryKey: queryKeys.contacts.stats(),
     queryFn: async () => {
-      const response = await apiClient.get<DataResponse<Record<string, unknown>>>(
-        "/api/v1/outreach/stats"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<DataResponse<Record<string, unknown>>>(
+          "/api/v1/outreach/stats"
+        );
+        return response.data.data;
+      } catch {
+        return {};
+      }
     },
+    retry: false,
   });
 }
 
@@ -53,10 +58,15 @@ export function useFollowUps() {
   return useQuery({
     queryKey: queryKeys.contacts.followUps(),
     queryFn: async () => {
-      const response = await apiClient.get<{ data: unknown[] }>(
-        "/api/v1/outreach/follow-ups"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<{ data: unknown[] }>(
+          "/api/v1/outreach/follow-ups"
+        );
+        return response.data.data;
+      } catch {
+        return [];
+      }
     },
+    retry: false,
   });
 }

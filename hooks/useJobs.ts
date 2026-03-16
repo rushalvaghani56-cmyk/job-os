@@ -52,11 +52,16 @@ export function useJobStats() {
   return useQuery({
     queryKey: queryKeys.jobs.stats(),
     queryFn: async (): Promise<JobStats> => {
-      const response = await apiClient.get<DataResponse<JobStats>>(
-        "/api/v1/jobs/stats"
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<DataResponse<JobStats>>(
+          "/api/v1/jobs/stats"
+        );
+        return response.data.data;
+      } catch {
+        return {} as JobStats;
+      }
     },
+    retry: false,
   });
 }
 

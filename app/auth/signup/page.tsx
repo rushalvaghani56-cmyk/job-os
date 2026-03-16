@@ -110,15 +110,18 @@ export default function SignupPage() {
     setIsGoogleLoading(true)
     setError("")
 
-    // Mock Google OAuth
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
     try {
-      await signup("Google User", "google.user@example.com", "mock-password")
-      router.push("/onboarding/step-1")
+      const { supabase } = await import("@/lib/supabase")
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/onboarding/step-1`,
+        },
+      })
+      if (oauthError) throw oauthError
+      // Browser will redirect to Google — no need to do anything else
     } catch {
       setError("Google sign up failed. Please try again.")
-    } finally {
       setIsGoogleLoading(false)
     }
   }
