@@ -10,12 +10,17 @@ export function useContentVariants(jobId: string | undefined) {
   return useQuery({
     queryKey: ["content", "variants", jobId],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: unknown[] }>(
-        `/api/v1/content/variants/${jobId}`
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.get<{ data: unknown[] }>(
+          `/api/v1/content/variants/${jobId}`
+        );
+        return response.data.data;
+      } catch {
+        return [];
+      }
     },
     enabled: !!jobId,
+    retry: false,
   });
 }
 
@@ -27,7 +32,7 @@ export function useGenerateResume() {
       profile_id: string;
     }) => {
       const response = await apiClient.post<DataResponse<{ task_id: string }>>(
-        "/api/v1/content/resume",
+        "/api/v1/content/generate-resume",
         data
       );
       return response.data.data;
@@ -50,7 +55,7 @@ export function useGenerateCoverLetter() {
       profile_id: string;
     }) => {
       const response = await apiClient.post<DataResponse<{ task_id: string }>>(
-        "/api/v1/content/cover-letter",
+        "/api/v1/content/generate-cover-letter",
         data
       );
       return response.data.data;

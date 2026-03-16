@@ -24,10 +24,10 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: queryKeys.notifications.unreadCount(),
     queryFn: async (): Promise<NotificationCounts> => {
-      const response = await apiClient.get<{ data: NotificationCounts }>(
+      const response = await apiClient.get<NotificationCounts>(
         "/api/v1/notifications/unread-count"
       );
-      return response.data.data;
+      return response.data;
     },
     refetchInterval: 30000, // Poll every 30 seconds
   });
