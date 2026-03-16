@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { JobFilters, JobStatus, SeniorityLevel, EmploymentType, LocationType, JobSource } from "./types"
-import { statusCounts, sourceCounts, scoreDistribution } from "./mock-data"
+import { useJobStats } from "@/hooks/useJobs"
 
 interface FilterSidebarProps {
   filters: JobFilters
@@ -113,8 +113,8 @@ function FilterSection({ title, count, defaultOpen = true, children }: FilterSec
   )
 }
 
-function ScoreHistogram({ distribution }: { distribution: typeof scoreDistribution }) {
-  const maxCount = Math.max(...distribution.map(d => d.count))
+function ScoreHistogram({ distribution }: { distribution: { range: string; count: number }[] }) {
+  const maxCount = Math.max(...distribution.map(d => d.count), 1)
   
   return (
     <div className="flex items-end gap-0.5 h-8 mb-2">
@@ -130,9 +130,31 @@ function ScoreHistogram({ distribution }: { distribution: typeof scoreDistributi
   )
 }
 
+const emptyStatusCounts: Record<JobStatus, number> = {
+  new: 0, scored: 0, content_ready: 0, applied: 0, interview: 0,
+  offer: 0, rejected: 0, skipped: 0, bookmarked: 0, ghosted: 0,
+}
+
+const emptySourceCounts: Record<JobSource, number> = {
+  linkedin: 0, indeed: 0, glassdoor: 0, company_site: 0, wellfound: 0, ycombinator: 0,
+}
+
+const emptyScoreDistribution = [
+  { range: "0-10", count: 0 }, { range: "10-20", count: 0 },
+  { range: "20-30", count: 0 }, { range: "30-40", count: 0 },
+  { range: "40-50", count: 0 }, { range: "50-60", count: 0 },
+  { range: "60-70", count: 0 }, { range: "70-80", count: 0 },
+  { range: "80-90", count: 0 }, { range: "90-100", count: 0 },
+]
+
 export function FilterSidebar({ filters, onFiltersChange, isCollapsed, onToggleCollapse }: FilterSidebarProps) {
   const [companySearch, setCompanySearch] = useState("")
   const [locationSearch, setLocationSearch] = useState("")
+
+  const { data: stats } = useJobStats()
+  const statusCounts: Record<JobStatus, number> = stats?.by_status ?? emptyStatusCounts
+  const sourceCounts: Record<JobSource, number> = emptySourceCounts
+  const scoreDistribution = emptyScoreDistribution
 
   const updateFilter = <K extends keyof JobFilters>(key: K, value: JobFilters[K]) => {
     onFiltersChange({ ...filters, [key]: value })

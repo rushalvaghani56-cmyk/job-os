@@ -1,178 +1,83 @@
-import type { ApiError, PaginatedResponse } from "@/types/api";
+// Centralized API Client — Single source of truth for all HTTP calls
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+import axios, {
+  AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+  type AxiosResponse,
+} from "axios";
+import { supabase } from "./supabase";
+import type { ApiError } from "@/types/api";
 
-/**
- * Get a random delay between min and max milliseconds
- */
-function getRandomDelay(min = 400, max = 900): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+// ─── Axios Instance ───
 
-/**
- * Simulate network delay for mock API calls
- */
-async function simulateDelay(ms?: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms ?? getRandomDelay()));
-}
+const apiClient: AxiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  timeout: 30000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-/**
- * Base API client with mock support
- */
-class APIClient {
-  private baseUrl: string;
-  private authToken: string | null = null;
+// ─── REQUEST INTERCEPTOR: Auto-attach JWT ───
 
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl;
-  }
+apiClient.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  setAuthToken(token: string | null) {
-    this.authToken = token;
-  }
-
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-
-    if (this.authToken) {
-      headers["Authorization"] = `Bearer ${this.authToken}`;
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
     }
 
-    return headers;
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    await simulateDelay();
+// ─── RESPONSE INTERCEPTOR: Global error handling ───
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "GET",
-      headers: this.getHeaders(),
-      ...options,
-    });
+apiClient.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  async (error: AxiosError<ApiError>) => {
+    const status = error.response?.status;
+    const errorCode = error.response?.data?.error?.code;
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new APIError(error);
+    // 401: Token expired or invalid → attempt refresh, then logout
+    if (status === 401) {
+      if (errorCode === "AUTH_TOKEN_EXPIRED") {
+        const { data, error: refreshError } =
+          await supabase.auth.refreshSession();
+
+        if (data.session && !refreshError) {
+          const originalRequest = error.config!;
+          originalRequest.headers.Authorization = `Bearer ${data.session.access_token}`;
+          return apiClient(originalRequest);
+        }
+      }
+
+      await supabase.auth.signOut();
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/login?reason=session_expired";
+      }
     }
 
-    return response.json();
-  }
-
-  async post<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
-    await simulateDelay();
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
-      ...options,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new APIError(error);
+    // 429: Rate limited → attach retry info
+    if (status === 429) {
+      const retryAfter = error.response?.headers?.["retry-after"];
+      if (retryAfter) {
+        (error as AxiosError & { retryAfter: number }).retryAfter =
+          parseInt(retryAfter, 10);
+      }
     }
 
-    return response.json();
+    return Promise.reject(error);
   }
+);
 
-  async put<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
-    await simulateDelay();
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "PUT",
-      headers: this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
-      ...options,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new APIError(error);
-    }
-
-    return response.json();
-  }
-
-  async patch<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
-    await simulateDelay();
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
-      ...options,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new APIError(error);
-    }
-
-    return response.json();
-  }
-
-  async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    await simulateDelay();
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "DELETE",
-      headers: this.getHeaders(),
-      ...options,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new APIError(error);
-    }
-
-    return response.json();
-  }
-}
-
-/**
- * Custom API Error class
- */
-export class APIError extends Error {
-  code: string;
-  details?: Array<{ field: string; message: string }>;
-
-  constructor(apiError: ApiError) {
-    super(apiError.error.message);
-    this.name = "APIError";
-    this.code = apiError.error.code;
-    this.details = apiError.error.details;
-  }
-}
-
-/**
- * Mock API client for development
- */
-export const api = new APIClient();
-
-/**
- * Helper to create paginated response
- */
-export function createPaginatedResponse<T>(
-  data: T[],
-  page: number = 1,
-  pageSize: number = 20
-): PaginatedResponse<T> {
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const paginatedData = data.slice(start, end);
-
-  return {
-    data: paginatedData,
-    next_cursor: end < data.length ? String(page + 1) : null,
-    has_more: end < data.length,
-    total_count: data.length,
-  };
-}
-
-/**
- * Helper to simulate API delay
- */
-export { simulateDelay };
+export { apiClient, supabase };
+export default apiClient;

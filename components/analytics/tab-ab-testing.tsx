@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { abTests } from "./mock-data"
 import { cn } from "@/lib/utils"
-import { Trophy, XCircle, Clock, HelpCircle, Plus, BarChart3 } from "lucide-react"
+import { Trophy, XCircle, Clock, HelpCircle, Plus, BarChart3, Loader2 } from "lucide-react"
+import { useABTests } from "@/hooks/useAnalytics"
+import type { ABTestResult } from "@/types/analytics"
 
 function ABTestingSkeleton() {
   return (
@@ -55,17 +56,47 @@ const statusConfig = {
   },
 }
 
-export function TabABTesting() {
-  const [isLoading, setIsLoading] = React.useState(true)
+/** Map API ABTestResult to the local ABTest shape used by cards */
+function mapABTests(apiTests: ABTestResult[]) {
+  return apiTests.map((t) => {
+    const statusMap: Record<string, "running" | "winner" | "loser" | "inconclusive"> = {
+      running: "running",
+      completed: t.winner === "a" || t.winner === "b" ? "winner" : "inconclusive",
+      stopped: "inconclusive",
+    }
+    const control = t.variant_a.conversion_rate
+    const treatment = t.variant_b.conversion_rate
+    const improvement = control > 0 ? ((treatment - control) / control) * 100 : 0
+    return {
+      id: t.id,
+      name: t.name,
+      variant: `${t.variant_a.name} vs ${t.variant_b.name}`,
+      metric: t.test_type.replace(/_/g, " "),
+      control,
+      treatment,
+      improvement,
+      significance: t.significance,
+      status: statusMap[t.status] ?? "running",
+    }
+  })
+}
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 500)
-    return () => clearTimeout(timer)
-  }, [])
+export function TabABTesting() {
+  const { data, isLoading, error } = useABTests()
 
   if (isLoading) {
     return <ABTestingSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load A/B test data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const abTests = mapABTests(data ?? [])
 
   return (
     <div className="space-y-6">

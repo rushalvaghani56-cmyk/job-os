@@ -24,7 +24,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { toast } from "sonner"
-import { mockTopJobs } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useScoringSettings } from "@/hooks/useSettings"
 import type { BonusRule } from "./types"
 import { cn } from "@/lib/utils"
 
@@ -93,19 +94,30 @@ function WeightSlider({
   )
 }
 
+const defaultTopJobs = [
+  { id: "1", title: "Senior Frontend Engineer", company: "Stripe", currentScore: 92 },
+  { id: "2", title: "Staff Engineer", company: "Vercel", currentScore: 89 },
+  { id: "3", title: "Tech Lead", company: "Linear", currentScore: 87 },
+  { id: "4", title: "Senior SWE", company: "Notion", currentScore: 85 },
+  { id: "5", title: "Principal Engineer", company: "Figma", currentScore: 83 },
+]
+
 function LivePreview({
   weights,
+  topJobs: initialJobs,
 }: {
   weights: ScoringWeight[]
+  topJobs?: { id: string; title: string; company: string; currentScore: number }[]
 }) {
-  const [jobs, setJobs] = React.useState(mockTopJobs)
+  const baseJobs = initialJobs?.length ? initialJobs : defaultTopJobs
+  const [jobs, setJobs] = React.useState(baseJobs)
   const [isUpdating, setIsUpdating] = React.useState(false)
 
   React.useEffect(() => {
     setIsUpdating(true)
     const timer = setTimeout(() => {
       // Simulate score recalculation based on weights
-      const updatedJobs = mockTopJobs.map((job) => ({
+      const updatedJobs = baseJobs.map((job) => ({
         ...job,
         currentScore: Math.min(
           100,
@@ -119,7 +131,7 @@ function LivePreview({
       setIsUpdating(false)
     }, 300)
     return () => clearTimeout(timer)
-  }, [weights])
+  }, [weights, baseJobs])
 
   return (
     <div className="rounded-xl border bg-muted/50 p-4">
@@ -166,11 +178,83 @@ function LivePreview({
   )
 }
 
+/** Map API scoring settings to local shapes */
+function mapScoringData(apiData: Record<string, unknown> | undefined) {
+  if (!apiData) return { weights: defaultWeights, bonusRules: defaultBonusRules, topJobs: defaultTopJobs }
+
+  const apiWeights = (apiData.weights ?? apiData.scoring_weights) as any[] | undefined
+  const apiBonusRules = (apiData.bonus_rules ?? apiData.bonusRules) as any[] | undefined
+  const apiTopJobs = (apiData.top_jobs ?? apiData.topJobs) as any[] | undefined
+
+  const colors = ["#6366F1", "#8B5CF6", "#EC4899", "#F43F5E", "#F97316", "#EAB308", "#22C55E", "#06B6D4"]
+
+  const weights: ScoringWeight[] = apiWeights?.length
+    ? apiWeights.map((w: any, i: number) => ({
+        id: String(w.id ?? i + 1),
+        label: (w.label ?? w.name ?? `Weight ${i + 1}`) as string,
+        value: (w.value ?? w.weight ?? 0) as number,
+        color: colors[i % colors.length],
+      }))
+    : defaultWeights
+
+  const bonusRules: BonusRule[] = apiBonusRules?.length
+    ? apiBonusRules.map((r: any) => ({
+        id: String(r.id ?? Date.now()),
+        condition: (r.condition ?? "") as string,
+        field: (r.field ?? "") as string,
+        operator: (r.operator ?? ">") as BonusRule["operator"],
+        value: String(r.value ?? "0"),
+        bonus: (r.bonus ?? r.points ?? 0) as number,
+        enabled: (r.enabled ?? true) as boolean,
+      }))
+    : defaultBonusRules
+
+  const topJobs = apiTopJobs?.length
+    ? apiTopJobs.map((j: any) => ({
+        id: String(j.id ?? ""),
+        title: (j.title ?? "") as string,
+        company: (j.company ?? "") as string,
+        currentScore: (j.current_score ?? j.currentScore ?? j.score ?? 0) as number,
+      }))
+    : defaultTopJobs
+
+  return { weights, bonusRules, topJobs }
+}
+
 export function TabScoring() {
+  const { data: apiData, isLoading, error } = useScoringSettings()
+  const [initialized, setInitialized] = React.useState(false)
   const [weights, setWeights] = React.useState<ScoringWeight[]>(defaultWeights)
   const [bonusRules, setBonusRules] = React.useState<BonusRule[]>(defaultBonusRules)
+  const [topJobs, setTopJobs] = React.useState(defaultTopJobs)
   const [isSaving, setIsSaving] = React.useState(false)
   const [isGettingSuggestion, setIsGettingSuggestion] = React.useState(false)
+
+  React.useEffect(() => {
+    if (apiData && !initialized) {
+      const mapped = mapScoringData(apiData)
+      setWeights(mapped.weights)
+      setBonusRules(mapped.bonusRules)
+      setTopJobs(mapped.topJobs)
+      setInitialized(true)
+    }
+  }, [apiData, initialized])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-10">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load scoring settings. Please try again later.</p>
+      </div>
+    )
+  }
 
   const total = weights.reduce((sum, w) => sum + w.value, 0)
 
@@ -371,7 +455,7 @@ export function TabScoring() {
 
         {/* Live Preview */}
         <div className="lg:sticky lg:top-4 lg:self-start">
-          <LivePreview weights={weights} />
+          <LivePreview weights={weights} topJobs={topJobs} />
         </div>
       </div>
 

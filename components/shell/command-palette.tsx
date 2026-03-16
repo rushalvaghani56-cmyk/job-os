@@ -37,12 +37,6 @@ import {
 } from "@/components/ui/command"
 import { useShell } from "./shell-context"
 
-interface Profile {
-  id: string
-  name: string
-  role: string
-}
-
 const pages = [
   { name: "Home", href: "/home", icon: Home, keywords: ["dashboard", "overview"] },
   { name: "Jobs", href: "/jobs", icon: Briefcase, keywords: ["browse", "discover", "opportunities"] },
@@ -67,16 +61,14 @@ const actions = [
   { name: "Export Data", icon: Download, keywords: ["download", "backup", "csv"], action: "export" },
 ]
 
-const mockProfiles: Profile[] = [
-  { id: "1", name: "Senior Frontend", role: "Senior Frontend Engineer" },
-  { id: "2", name: "Full Stack", role: "Full Stack Developer" },
-  { id: "3", name: "Tech Lead", role: "Engineering Manager" },
-]
+import { useProfiles, useActivateProfile } from "@/hooks/useProfiles"
 
 export function CommandPalette() {
   const router = useRouter()
   const { commandPaletteOpen, setCommandPaletteOpen, toggleCopilot } = useShell()
   const [search, setSearch] = React.useState("")
+  const { data: profiles = [] } = useProfiles()
+  const activateProfile = useActivateProfile()
 
   const runCommand = React.useCallback(
     (command: () => void) => {
@@ -171,13 +163,13 @@ export function CommandPalette() {
         <CommandSeparator />
 
         <CommandGroup heading="Switch Profile">
-          {mockProfiles.map((profile) => (
+          {profiles.map((profile) => (
             <CommandItem
               key={profile.id}
-              value={`switch profile ${profile.name} ${profile.role}`}
+              value={`switch profile ${profile.name} ${profile.target_role}`}
               onSelect={() =>
                 runCommand(() => {
-                  // Profile switch triggered
+                  activateProfile.mutate(profile.id)
                 })
               }
               className="flex items-center gap-2"
@@ -185,7 +177,7 @@ export function CommandPalette() {
               <UserCircle className="h-4 w-4 text-muted-foreground" />
               <div className="flex flex-col">
                 <span>Switch to {profile.name}</span>
-                <span className="text-xs text-muted-foreground">{profile.role}</span>
+                <span className="text-xs text-muted-foreground">{profile.target_role}</span>
               </div>
             </CommandItem>
           ))}

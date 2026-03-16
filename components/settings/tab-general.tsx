@@ -35,7 +35,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { mockGeneralSettings } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useGeneralSettings } from "@/hooks/useSettings"
 import type { GeneralSettings } from "./types"
 
 const timezones = [
@@ -51,12 +52,49 @@ const timezones = [
   { value: "Australia/Sydney", label: "Sydney (AEDT)" },
 ]
 
+/** Map API response to local GeneralSettings shape */
+function mapGeneralSettings(apiData: Record<string, unknown> | undefined): GeneralSettings {
+  return {
+    displayName: (apiData?.display_name as string) ?? (apiData?.displayName as string) ?? "",
+    email: (apiData?.email as string) ?? "",
+    timezone: (apiData?.timezone as string) ?? "America/Los_Angeles",
+    language: (apiData?.language as string) ?? "en",
+    dateFormat: (apiData?.date_format as string) ?? (apiData?.dateFormat as string) ?? "MM/DD/YYYY",
+    theme: (apiData?.theme as "light" | "dark" | "system") ?? "system",
+  }
+}
+
 export function TabGeneral() {
   const { theme, setTheme } = useTheme()
-  const [settings, setSettings] = React.useState<GeneralSettings>({
-    ...mockGeneralSettings,
-    theme: (theme as "light" | "dark" | "system") || "system",
-  })
+  const { data: apiSettings, isLoading, error } = useGeneralSettings()
+  const [settings, setSettings] = React.useState<GeneralSettings | null>(null)
+
+  // Seed local state once API data arrives
+  React.useEffect(() => {
+    if (apiSettings && !settings) {
+      const mapped = mapGeneralSettings(apiSettings)
+      setSettings({
+        ...mapped,
+        theme: (theme as "light" | "dark" | "system") || mapped.theme,
+      })
+    }
+  }, [apiSettings, theme, settings])
+
+  if (isLoading || !settings) {
+    return (
+      <div className="flex items-center justify-center p-10">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load settings. Please try again later.</p>
+      </div>
+    )
+  }
   const [isSaving, setIsSaving] = React.useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = React.useState(false)
   const [show2FADialog, setShow2FADialog] = React.useState(false)

@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { mockAPIKeys } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useAPIKeys } from "@/hooks/useSettings"
 import type { APIKey } from "./types"
 
 const providerLogos: Record<string, { name: string; color: string }> = {
@@ -223,8 +224,29 @@ function APIKeyCard({
   )
 }
 
+/** Map API response to local APIKey shape */
+function mapAPIKeys(apiData: unknown[] | undefined): APIKey[] {
+  if (!apiData) return []
+  return apiData.map((item: any) => ({
+    id: String(item.id ?? item.provider ?? ""),
+    provider: (item.provider as APIKey["provider"]) ?? "openai",
+    maskedKey: (item.masked_key as string) ?? (item.maskedKey as string) ?? "",
+    status: (item.status as APIKey["status"]) ?? "not_set",
+    lastValidated: item.last_validated ? new Date(item.last_validated as string) : (item.lastValidated ? new Date(item.lastValidated as string) : undefined),
+  }))
+}
+
 export function TabAPIKeys() {
-  const [apiKeys, setApiKeys] = React.useState<APIKey[]>(mockAPIKeys)
+  const { data: apiData, isLoading, error } = useAPIKeys()
+  const [apiKeys, setApiKeys] = React.useState<APIKey[]>([])
+  const [initialized, setInitialized] = React.useState(false)
+
+  React.useEffect(() => {
+    if (apiData && !initialized) {
+      setApiKeys(mapAPIKeys(apiData))
+      setInitialized(true)
+    }
+  }, [apiData, initialized])
   const [showAddDialog, setShowAddDialog] = React.useState(false)
   const [newProvider, setNewProvider] = React.useState("")
   const [newKey, setNewKey] = React.useState("")
@@ -273,6 +295,22 @@ export function TabAPIKeys() {
       setShowAddDialog(false)
       toast.success("API key added successfully")
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-10">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load API keys. Please try again later.</p>
+      </div>
+    )
   }
 
   return (

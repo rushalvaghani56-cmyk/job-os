@@ -2,11 +2,15 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PasswordInput } from "./password-input"
 import { FieldGroup, Field } from "@/components/ui/field"
+import { useAuthStore } from "@/stores/authStore"
+import { getErrorMessage } from "@/lib/apiHelpers"
+import { supabase } from "@/lib/supabase"
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -38,15 +42,39 @@ interface LoginFormProps {
 export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
+  const router = useRouter()
+  const login = useAuthStore((s) => s.login)
+  const hasCompletedOnboarding = useAuthStore((s) => s.hasCompletedOnboarding)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+
+    try {
+      await login(email, password)
+      router.push(hasCompletedOnboarding ? "/home" : "/onboarding/step-1")
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/home` },
+    })
+    if (error) {
+      setError(getErrorMessage(error))
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -56,13 +84,14 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           <Label htmlFor="login-email">Email</Label>
           <Input
             id="login-email"
+            name="email"
             type="email"
             placeholder="you@company.com"
             required
             autoComplete="email"
           />
         </Field>
-        
+
         <Field>
           <div className="flex items-center justify-between">
             <Label htmlFor="login-password">Password</Label>
@@ -75,6 +104,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           </div>
           <PasswordInput
             id="login-password"
+            name="password"
             placeholder="Enter your password"
             required
             autoComplete="current-password"
@@ -110,6 +140,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         variant="outline"
         className="w-full rounded-lg"
         disabled={isLoading}
+        onClick={handleGoogleLogin}
       >
         <GoogleIcon className="size-4 mr-2" />
         Continue with Google

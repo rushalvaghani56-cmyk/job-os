@@ -12,7 +12,7 @@ export interface User {
   /** User's email address */
   email: string;
   /** User's display name */
-  name: string;
+  full_name: string | null;
   /** URL to user's avatar image */
   avatar_url: string | null;
   /** User's role in the system */

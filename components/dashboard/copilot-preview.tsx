@@ -32,13 +32,10 @@ interface CopilotPreviewProps {
 
 export function CopilotPreview({ isLoading = false }: CopilotPreviewProps) {
   const [query, setQuery] = React.useState("")
-  const { toggleCopilot, setInput } = useCopilotStore()
+  const { toggleCopilot } = useCopilotStore()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
-      setInput(query)
-    }
     toggleCopilot()
   }
 

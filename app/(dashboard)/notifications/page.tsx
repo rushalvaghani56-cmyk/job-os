@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import {
   Star,
@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/hooks/useNotifications"
 
 type NotificationType =
   | "dream_company_match"
@@ -47,6 +48,21 @@ type NotificationType =
   | "offer_received"
   | "response_received"
   | "prep_ready"
+  // API types mapped
+  | "new_jobs_discovered"
+  | "job_deadline_approaching"
+  | "dream_company_job"
+  | "application_status_change"
+  | "interview_scheduled"
+  | "interview_reminder"
+  | "content_ready_for_review"
+  | "content_approved"
+  | "content_rejected"
+  | "follow_up_due"
+  | "ai_key_expiring"
+  | "ai_quota_warning"
+  | "discovery_completed"
+  | "weekly_summary"
 
 type Priority = "critical" | "high" | "medium" | "low"
 
@@ -59,318 +75,42 @@ interface Notification {
   read: boolean
   timestamp: Date
   link?: string
-  entityType?: "job" | "application" | "profile" | "document" | "outreach" | "email"
+  entityType?: string
   entityId?: string
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "dream_company_match",
-    title: "Dream Company Match",
-    body: "Stripe posted Senior Frontend Engineer (Score: 92)",
-    priority: "critical",
-    read: false,
-    timestamp: new Date(Date.now() - 15 * 60 * 1000),
-    link: "/jobs/stripe-frontend",
-    entityType: "job",
-    entityId: "job_001",
-  },
-  {
-    id: "2",
-    type: "interview_detected",
-    title: "Interview Invitation",
-    body: "Vercel wants to schedule a technical interview for Full Stack role",
-    priority: "critical",
-    read: false,
-    timestamp: new Date(Date.now() - 45 * 60 * 1000),
-    link: "/interviews",
-    entityType: "application",
-    entityId: "app_001",
-  },
-  {
-    id: "3",
-    type: "offer_received",
-    title: "Offer Received!",
-    body: "Congratulations! Linear has extended an offer for Staff Engineer",
-    priority: "critical",
-    read: false,
-    timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
-    link: "/applications?id=app_linear",
-    entityType: "application",
-    entityId: "app_linear",
-  },
-  {
-    id: "4",
-    type: "high_score_job",
-    title: "High Score Job Found",
-    body: "4 new jobs scored 85+ matching your Senior Frontend profile",
-    priority: "high",
-    read: false,
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    link: "/jobs?score_min=85",
-    entityType: "job",
-  },
-  {
-    id: "5",
-    type: "content_ready",
-    title: "Content Ready for Review",
-    body: "Resume and cover letter generated for Netflix - Senior Engineer",
-    priority: "high",
-    read: false,
-    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-    link: "/review",
-    entityType: "document",
-    entityId: "doc_001",
-  },
-  {
-    id: "6",
-    type: "application_failed",
-    title: "Submission Failed",
-    body: "Application to Amazon failed - CAPTCHA required",
-    priority: "high",
-    read: true,
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    link: "/applications?status=failed",
-    entityType: "application",
-    entityId: "app_002",
-  },
-  {
-    id: "7",
-    type: "application_submitted",
-    title: "Application Submitted",
-    body: "Successfully applied to Google - Software Engineer L5",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-    link: "/applications",
-    entityType: "application",
-    entityId: "app_003",
-  },
-  {
-    id: "8",
-    type: "follow_up_due",
-    title: "Follow-up Due",
-    body: "Time to follow up with recruiter at Meta (Day 5)",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
-    link: "/outreach",
-    entityType: "outreach",
-    entityId: "out_001",
-  },
-  {
-    id: "9",
-    type: "api_key_warning",
-    title: "API Key Expiring",
-    body: "Your Anthropic API key expires in 3 days",
-    priority: "high",
-    read: true,
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    link: "/settings?tab=api-keys",
-  },
-  {
-    id: "10",
-    type: "rejection_detected",
-    title: "Rejection Detected",
-    body: "Received rejection email from Apple for iOS Engineer role",
-    priority: "low",
-    read: true,
-    timestamp: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000),
-    link: "/applications?status=rejected",
-    entityType: "application",
-    entityId: "app_004",
-  },
-  {
-    id: "11",
-    type: "ghost_detected",
-    title: "Possible Ghost",
-    body: "No response from Coinbase in 14 days - marked as ghosted",
-    priority: "low",
-    read: true,
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    link: "/applications?status=ghosted",
-    entityType: "application",
-    entityId: "app_005",
-  },
-  {
-    id: "12",
-    type: "weekly_report",
-    title: "Weekly Report Ready",
-    body: "Your job search summary for the week is available",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    link: "/analytics?tab=reports",
-  },
-  {
-    id: "13",
-    type: "discovery_complete",
-    title: "Discovery Complete",
-    body: "Found 28 new jobs across 8 sources",
-    priority: "low",
-    read: true,
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    link: "/jobs?sort=newest",
-    entityType: "job",
-  },
-  {
-    id: "14",
-    type: "copilot_insight",
-    title: "AI Insight",
-    body: "Your fintech cover letters get 2x more responses - emphasize payments experience",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: "15",
-    type: "dream_company_match",
-    title: "Dream Company Match",
-    body: "Notion posted Senior Product Engineer (Score: 89)",
-    priority: "critical",
-    read: true,
-    timestamp: new Date(Date.now() - 4.5 * 24 * 60 * 60 * 1000),
-    link: "/jobs/notion-product",
-    entityType: "job",
-    entityId: "job_015",
-  },
-  {
-    id: "16",
-    type: "content_ready",
-    title: "Content Ready for Review",
-    body: "Resume variant B generated for Airbnb - Staff Engineer",
-    priority: "high",
-    read: true,
-    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    link: "/review",
-    entityType: "document",
-    entityId: "doc_016",
-  },
-  {
-    id: "17",
-    type: "application_submitted",
-    title: "Application Submitted",
-    body: "Successfully applied to Figma - Design Engineer",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 5.2 * 24 * 60 * 60 * 1000),
-    link: "/applications",
-    entityType: "application",
-    entityId: "app_017",
-  },
-  {
-    id: "18",
-    type: "follow_up_due",
-    title: "Follow-up Due",
-    body: "Time to follow up with hiring manager at Shopify (Day 7)",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 5.5 * 24 * 60 * 60 * 1000),
-    link: "/outreach",
-    entityType: "outreach",
-    entityId: "out_018",
-  },
-  {
-    id: "19",
-    type: "high_score_job",
-    title: "High Score Job Found",
-    body: "Ramp posted Payments Engineer - 91 match score",
-    priority: "high",
-    read: true,
-    timestamp: new Date(Date.now() - 5.8 * 24 * 60 * 60 * 1000),
-    link: "/jobs/ramp-payments",
-    entityType: "job",
-    entityId: "job_019",
-  },
-  {
-    id: "20",
-    type: "rejection_detected",
-    title: "Rejection Detected",
-    body: "Received rejection from Databricks for Data Engineer role",
-    priority: "low",
-    read: true,
-    timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-    link: "/applications?status=rejected",
-    entityType: "application",
-    entityId: "app_020",
-  },
-  {
-    id: "21",
-    type: "interview_detected",
-    title: "Interview Scheduled",
-    body: "Phone screen confirmed with Datadog for SRE position",
-    priority: "critical",
-    read: true,
-    timestamp: new Date(Date.now() - 6.2 * 24 * 60 * 60 * 1000),
-    link: "/interviews",
-    entityType: "application",
-    entityId: "app_021",
-  },
-  {
-    id: "22",
-    type: "discovery_complete",
-    title: "Discovery Complete",
-    body: "Found 15 new remote jobs from LinkedIn and Indeed",
-    priority: "low",
-    read: true,
-    timestamp: new Date(Date.now() - 6.5 * 24 * 60 * 60 * 1000),
-    link: "/jobs?sort=newest",
-    entityType: "job",
-  },
-  {
-    id: "23",
-    type: "copilot_insight",
-    title: "AI Insight",
-    body: "Companies respond faster when you mention specific projects - try adding case studies",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 6.8 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: "24",
-    type: "ghost_detected",
-    title: "Possible Ghost",
-    body: "No response from Plaid in 21 days - marked as ghosted",
-    priority: "low",
-    read: true,
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    link: "/applications?status=ghosted",
-    entityType: "application",
-    entityId: "app_024",
-  },
-  {
-    id: "25",
-    type: "application_submitted",
-    title: "Application Submitted",
-    body: "Successfully applied to OpenAI - Research Engineer",
-    priority: "medium",
-    read: true,
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    link: "/applications",
-    entityType: "application",
-    entityId: "app_025",
-  },
-]
-
-const notificationIcons: Record<NotificationType, React.ElementType> = {
+const notificationIcons: Record<string, React.ElementType> = {
   dream_company_match: Star,
+  dream_company_job: Star,
   high_score_job: Target,
+  new_jobs_discovered: Target,
   content_ready: FileText,
+  content_ready_for_review: FileText,
+  content_approved: CheckCircle2,
+  content_rejected: XCircle,
   application_submitted: CheckCircle2,
+  application_status_change: CheckCircle2,
   application_failed: XCircle,
   interview_detected: Calendar,
+  interview_scheduled: Calendar,
+  interview_reminder: Calendar,
   rejection_detected: XCircle,
+  rejection_received: XCircle,
   ghost_detected: Ghost,
   follow_up_due: Mail,
+  response_received: Bell,
   api_key_warning: AlertTriangle,
+  ai_key_expiring: AlertTriangle,
+  ai_quota_warning: AlertTriangle,
   captcha_intervention: ShieldAlert,
   weekly_report: BarChart,
+  weekly_summary: BarChart,
   discovery_complete: SearchIcon,
+  discovery_completed: SearchIcon,
   copilot_insight: Sparkles,
   offer_received: Trophy,
-  response_received: Bell,
   prep_ready: CheckCircle,
+  job_deadline_approaching: AlertCircle,
 }
 
 const priorityColors: Record<Priority, string> = {
@@ -381,25 +121,41 @@ const priorityColors: Record<Priority, string> = {
 }
 
 // Icon background and text colors for each notification type (32px circle)
-const iconStyles: Record<NotificationType, { bg: string; text: string }> = {
+const iconStyles: Record<string, { bg: string; text: string }> = {
   dream_company_match: { bg: "bg-violet-500/10", text: "text-violet-500" },
+  dream_company_job: { bg: "bg-violet-500/10", text: "text-violet-500" },
   high_score_job: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  new_jobs_discovered: { bg: "bg-blue-500/10", text: "text-blue-500" },
   content_ready: { bg: "bg-primary/10", text: "text-primary" },
+  content_ready_for_review: { bg: "bg-primary/10", text: "text-primary" },
+  content_approved: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
+  content_rejected: { bg: "bg-red-500/10", text: "text-red-500" },
   application_submitted: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
+  application_status_change: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
   application_failed: { bg: "bg-red-500/10", text: "text-red-500" },
   interview_detected: { bg: "bg-teal-500/10", text: "text-teal-500" },
+  interview_scheduled: { bg: "bg-teal-500/10", text: "text-teal-500" },
+  interview_reminder: { bg: "bg-teal-500/10", text: "text-teal-500" },
   rejection_detected: { bg: "bg-slate-500/10", text: "text-slate-500" },
+  rejection_received: { bg: "bg-slate-500/10", text: "text-slate-500" },
   ghost_detected: { bg: "bg-slate-400/10", text: "text-slate-400" },
   follow_up_due: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  response_received: { bg: "bg-blue-500/10", text: "text-blue-500" },
   api_key_warning: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  ai_key_expiring: { bg: "bg-amber-500/10", text: "text-amber-500" },
+  ai_quota_warning: { bg: "bg-amber-500/10", text: "text-amber-500" },
   captcha_intervention: { bg: "bg-amber-500/10", text: "text-amber-500" },
   weekly_report: { bg: "bg-primary/10", text: "text-primary" },
+  weekly_summary: { bg: "bg-primary/10", text: "text-primary" },
   discovery_complete: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  discovery_completed: { bg: "bg-blue-500/10", text: "text-blue-500" },
   copilot_insight: { bg: "bg-secondary/10", text: "text-secondary-foreground" },
   offer_received: { bg: "bg-emerald-500/10", text: "text-emerald-500" },
-  response_received: { bg: "bg-blue-500/10", text: "text-blue-500" },
   prep_ready: { bg: "bg-green-500/10", text: "text-green-500" },
+  job_deadline_approaching: { bg: "bg-amber-500/10", text: "text-amber-500" },
 }
+
+const defaultIconStyle = { bg: "bg-muted", text: "text-muted-foreground" }
 
 function formatTimeAgo(date: Date): string {
   const now = new Date()
@@ -416,8 +172,8 @@ function formatTimeAgo(date: Date): string {
 }
 
 function NotificationCard({ notification, onMarkRead }: { notification: Notification; onMarkRead: (id: string) => void }) {
-  const Icon = notificationIcons[notification.type]
-  const styles = iconStyles[notification.type]
+  const Icon = notificationIcons[notification.type] ?? Bell
+  const styles = iconStyles[notification.type] ?? defaultIconStyle
 
   const content = (
     <div
@@ -479,11 +235,33 @@ function NotificationSkeleton() {
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications)
+  const { data: apiNotifications, isLoading: apiLoading } = useNotifications()
+  const markReadMutation = useMarkNotificationRead()
+  const markAllReadMutation = useMarkAllRead()
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
-  const [isLoading] = useState(false)
   const [visibleCount, setVisibleCount] = useState(15)
+
+  // Hydrate local state from API
+  useEffect(() => {
+    if (apiNotifications) {
+      setNotifications(
+        apiNotifications.map((n) => ({
+          id: n.id,
+          type: n.type as NotificationType,
+          title: n.title,
+          body: n.body,
+          priority: n.priority as Priority,
+          read: n.is_read,
+          timestamp: new Date(n.created_at),
+          link: n.action_url,
+        }))
+      )
+    }
+  }, [apiNotifications])
+
+  const isLoading = apiLoading
 
   const filteredNotifications = useMemo(() => {
     let filtered = notifications
@@ -540,10 +318,12 @@ export default function NotificationsPage() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     )
+    markReadMutation.mutate(id)
   }
 
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    markAllReadMutation.mutate()
   }
 
   return (
@@ -665,7 +445,7 @@ export default function NotificationsPage() {
               ))}
             </div>
           )}
-          
+
           {/* Load More Button */}
           {visibleCount < totalFilteredCount && (
             <div className="flex justify-center pt-4">

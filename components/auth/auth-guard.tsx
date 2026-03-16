@@ -40,23 +40,27 @@ function AccessDenied() {
   )
 }
 
-export function AuthGuard({ 
-  children, 
+export function AuthGuard({
+  children,
   requireAdmin = false,
-  requireOnboarding = true 
+  requireOnboarding = true
 }: AuthGuardProps) {
   const router = useRouter()
-  const { user, isAuthenticated, isLoading, hasCompletedOnboarding } = useAuthStore()
+  const { user, isAuthenticated, isLoading, hasCompletedOnboarding, initialize } = useAuthStore()
+
+  useEffect(() => {
+    initialize()
+  }, [initialize])
 
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push("/auth/login")
+        router.replace("/auth/login")
         return
       }
-      
+
       if (requireOnboarding && !hasCompletedOnboarding) {
-        router.push("/onboarding/step-1")
+        router.replace("/onboarding/step-1")
         return
       }
     }

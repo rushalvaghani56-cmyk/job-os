@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
-import { funnelNodes, conversionRows } from "./mock-data"
+import { TrendingUp, TrendingDown, Minus, Loader2 } from "lucide-react"
+import { useFunnelData } from "@/hooks/useAnalytics"
+import type { FunnelStage } from "@/types/analytics"
 
 function FunnelSkeleton() {
   return (
@@ -36,8 +37,29 @@ function FunnelSkeleton() {
   )
 }
 
+/** Map API FunnelStage[] to the local FunnelNode shape used by the diagram */
+function mapStagesToNodes(stages: FunnelStage[]) {
+  return stages.map((s, i) => ({
+    id: s.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: s.name,
+    value: s.count,
+    color: `hsl(var(--chart-${(i % 5) + 1}))`,
+  }))
+}
+
+/** Map API FunnelStage[] to the local ConversionRow shape used by the table */
+function mapStagesToConversionRows(stages: FunnelStage[]) {
+  return stages.slice(1).map((s, i) => ({
+    from: stages[i].name,
+    to: s.name,
+    count: s.count,
+    rate: s.conversion_rate,
+    changeVsLastPeriod: s.change,
+  }))
+}
+
 // Simple Sankey-like visualization using SVG
-function SankeyDiagram() {
+function SankeyDiagram({ funnelNodes }: { funnelNodes: { id: string; name: string; value: number; color: string }[] }) {
   const containerRef = React.useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = React.useState({ width: 800, height: 400 })
   const [hoveredNode, setHoveredNode] = React.useState<string | null>(null)
@@ -246,24 +268,30 @@ function SankeyDiagram() {
 }
 
 export function TabFunnel() {
-  const [isLoading, setIsLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => setIsLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
+  const { data, isLoading, error } = useFunnelData()
 
   if (isLoading) {
     return <FunnelSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load funnel data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const stages = data?.stages ?? []
+  const funnelNodes = mapStagesToNodes(stages)
+  const conversionRows = mapStagesToConversionRows(stages)
 
   return (
     <div className="space-y-6">
       {/* Sankey Diagram */}
       <div className="rounded-xl border bg-card p-5">
         <h3 className="mb-4 text-sm font-semibold">Application Funnel</h3>
-        <SankeyDiagram />
+        <SankeyDiagram funnelNodes={funnelNodes} />
       </div>
 
       {/* Conversion Rate Table */}

@@ -3,7 +3,9 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { timingData } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useTimingAnalysis } from "@/hooks/useAnalytics"
+import type { TimingAnalysis } from "@/types/analytics"
 
 function TimingSkeleton() {
   return (
@@ -70,25 +72,55 @@ function getColorForValue(value: number) {
   return "bg-muted"
 }
 
+/** Build heatmap data from API timing analysis, falling back to generated data */
+function buildHeatmapFromAPI(apiData: TimingAnalysis | undefined) {
+  if (!apiData) return heatmapData
+
+  // Build a lookup of response rates from API
+  const dayRates: Record<string, number> = {}
+  for (const d of apiData.best_days) {
+    dayRates[d.day.substring(0, 3)] = d.response_rate
+  }
+  const hourRates: Record<number, number> = {}
+  for (const h of apiData.best_times) {
+    hourRates[h.hour] = h.response_rate
+  }
+
+  // Merge API rates into heatmap grid
+  return heatmapData.map((cell) => {
+    const dayRate = dayRates[cell.day] ?? 0
+    const hourRate = hourRates[cell.hour] ?? 0
+    const combined = dayRate > 0 || hourRate > 0
+      ? Math.round((dayRate + hourRate) / 2)
+      : cell.value
+    return { ...cell, value: combined }
+  })
+}
+
 export function TabTiming() {
   const [selectedCell, setSelectedCell] = React.useState<{ day: string; hour: number } | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
+  const { data, isLoading, error } = useTimingAnalysis()
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
-  
-  const selectedData = selectedCell 
-    ? heatmapData.find(d => d.day === selectedCell.day && d.hour === selectedCell.hour)
-    : null
-
-  // Find best times
-  const sortedByValue = [...heatmapData].sort((a, b) => b.value - a.value)
-  
   if (isLoading) {
     return <TimingSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load timing data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const resolvedHeatmapData = buildHeatmapFromAPI(data)
+
+  const selectedData = selectedCell
+    ? resolvedHeatmapData.find(d => d.day === selectedCell.day && d.hour === selectedCell.hour)
+    : null
+
+  // Find best times
+  const sortedByValue = [...resolvedHeatmapData].sort((a, b) => b.value - a.value)
   const bestTimes = sortedByValue.slice(0, 5)
   const worstTimes = sortedByValue.slice(-5).reverse()
 
@@ -122,7 +154,7 @@ export function TabTiming() {
                   <div className="w-10 text-xs text-muted-foreground">{day}</div>
                   <div className="flex flex-1 gap-1">
                     {hours.map((hour) => {
-                      const cell = heatmapData.find(d => d.day === day && d.hour === hour)
+                      const cell = resolvedHeatmapData.find(d => d.day === day && d.hour === hour)
                       const isSelected = selectedCell?.day === day && selectedCell?.hour === hour
                       return (
                         <button

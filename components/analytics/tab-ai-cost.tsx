@@ -19,8 +19,9 @@ import {
 } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import { dailySpending, taskSpending, aiCostStats } from "./mock-data"
-import { DollarSign, TrendingUp, FileText, Zap } from "lucide-react"
+import { DollarSign, TrendingUp, FileText, Zap, Loader2 } from "lucide-react"
+import { useAICostData } from "@/hooks/useAnalytics"
+import type { AICostData } from "@/types/analytics"
 
 function AICostSkeleton() {
   return (
@@ -73,24 +74,91 @@ const stackedBarConfig: ChartConfig = {
   },
 }
 
+/** Map API AICostData to the local shapes used by charts */
+function mapAICostData(apiData: AICostData | undefined) {
+  const pieColors = [
+    "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))", "hsl(var(--chart-5))",
+  ]
+
+  const dailySpending = (apiData?.daily_trend ?? []).map((d) => ({
+    date: d.date,
+    displayDate: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    anthropic: 0,
+    openai: 0,
+    google: 0,
+    total: d.cost,
+  }))
+
+  // Distribute costs by model into provider buckets for the stacked chart
+  const modelProviderMap: Record<string, string> = {}
+  for (const m of apiData?.by_model ?? []) {
+    const lower = m.model.toLowerCase()
+    if (lower.includes("claude") || lower.includes("anthropic")) modelProviderMap[m.model] = "anthropic"
+    else if (lower.includes("gpt") || lower.includes("openai")) modelProviderMap[m.model] = "openai"
+    else modelProviderMap[m.model] = "google"
+  }
+  // Re-assign provider costs to daily if we have model breakdown
+  if (apiData?.by_model?.length && dailySpending.length > 0) {
+    const totalByProvider: Record<string, number> = { anthropic: 0, openai: 0, google: 0 }
+    for (const m of apiData.by_model) {
+      const provider = modelProviderMap[m.model] ?? "google"
+      totalByProvider[provider] += m.cost
+    }
+    const grandTotal = Object.values(totalByProvider).reduce((a, b) => a + b, 0) || 1
+    for (const d of dailySpending) {
+      d.anthropic = d.total * (totalByProvider.anthropic / grandTotal)
+      d.openai = d.total * (totalByProvider.openai / grandTotal)
+      d.google = d.total * (totalByProvider.google / grandTotal)
+    }
+  }
+
+  const totalFeatureCost = (apiData?.by_feature ?? []).reduce((s, f) => s + f.cost, 0) || 1
+  const taskSpending = (apiData?.by_feature ?? []).map((f, i) => ({
+    task: f.feature,
+    amount: f.cost,
+    percentage: Math.round((f.cost / totalFeatureCost) * 100),
+    color: pieColors[i % pieColors.length],
+  }))
+
+  const costPerApp = apiData?.by_feature?.length
+    ? apiData.total_cost / Math.max(1, apiData.by_feature.reduce((s, f) => s + f.requests, 0))
+    : 0
+
+  const mostExpensive = [...(apiData?.by_feature ?? [])].sort((a, b) => b.cost - a.cost)[0]
+
+  const aiCostStats = {
+    thisMonth: apiData?.total_cost ?? 0,
+    projected: apiData?.projected_monthly ?? 0,
+    costPerApplication: costPerApp,
+    mostExpensiveTask: mostExpensive?.feature ?? "N/A",
+  }
+
+  return { dailySpending, taskSpending, aiCostStats }
+}
+
 export function TabAICost() {
   const [activeTaskIndex, setActiveTaskIndex] = React.useState<number | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 650)
-    return () => clearTimeout(timer)
-  }, [])
-
-// Format date for x-axis
-  const formattedSpending = dailySpending.map(d => ({
-    ...d,
-    dateFormatted: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }))
+  const { data, isLoading, error } = useAICostData()
 
   if (isLoading) {
     return <AICostSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load AI cost data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const { dailySpending, taskSpending, aiCostStats } = mapAICostData(data)
+
+  const formattedSpending = dailySpending.map(d => ({
+    ...d,
+    dateFormatted: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }))
 
   return (
     <div className="space-y-6">

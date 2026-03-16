@@ -8,12 +8,14 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     hasCompletedOnboarding,
+    error,
+    initialize,
     login,
     signup,
     logout,
-    refreshToken,
     setUser,
     setOnboardingComplete,
+    clearError,
   } = useAuthStore();
 
   return {
@@ -21,11 +23,13 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     hasCompletedOnboarding,
+    error,
+    initialize,
     login,
     signup,
     logout,
-    refreshToken,
     setUser,
     setOnboardingComplete,
+    clearError,
   };
 }

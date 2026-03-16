@@ -23,9 +23,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { goals } from "./mock-data"
 import { cn } from "@/lib/utils"
-import { Plus, Sparkles, Target, TrendingUp, TrendingDown, Minus, Calendar } from "lucide-react"
+import { Plus, Sparkles, Target, TrendingUp, TrendingDown, Minus, Calendar, Loader2 } from "lucide-react"
+import { useGoals } from "@/hooks/useAnalytics"
+import type { GoalData } from "@/types/analytics"
 import type { Goal } from "./types"
 
 function GoalsSkeleton() {
@@ -76,18 +77,54 @@ const typeIcons = {
   offers: Target,
 }
 
+/** Map API GoalData to the local Goal shape used by cards */
+function mapGoalData(apiGoals: GoalData[]): Goal[] {
+  return apiGoals.map((g) => {
+    const paceMap: Record<string, Goal["pace"]> = {
+      on_track: "on-track",
+      completed: "ahead",
+      ahead: "ahead",
+      at_risk: "behind",
+      behind: "behind",
+    }
+    const typeMap: Record<string, Goal["type"]> = {
+      applications_per_week: "applications",
+      interviews_per_month: "interviews",
+      response_rate: "responses",
+      custom: "applications",
+    }
+    return {
+      id: g.id,
+      title: g.name,
+      type: typeMap[g.type] ?? "applications",
+      current: g.current,
+      target: g.target,
+      deadline: g.time_remaining_days != null
+        ? new Date(Date.now() + g.time_remaining_days * 86400000).toISOString().split("T")[0]
+        : new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+      pace: paceMap[g.status] ?? "on-track",
+      copilotAdvice: `Progress: ${g.progress}% complete. Trend is ${g.trend}.`,
+    }
+  })
+}
+
 export function TabGoals() {
   const [addGoalOpen, setAddGoalOpen] = React.useState(false)
-  const [isLoading, setIsLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 450)
-    return () => clearTimeout(timer)
-  }, [])
+  const { data, isLoading, error } = useGoals()
 
   if (isLoading) {
     return <GoalsSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load goals data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const goals = mapGoalData(data ?? [])
 
   return (
     <div className="space-y-6">

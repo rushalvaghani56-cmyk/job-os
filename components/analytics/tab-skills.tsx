@@ -14,10 +14,11 @@ import {
 } from "recharts"
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import { skillDemand } from "./mock-data"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useSkillsAnalysis } from "@/hooks/useAnalytics"
+import type { SkillsAnalysis } from "@/types/analytics"
 
 function SkillsSkeleton() {
   return (
@@ -56,17 +57,41 @@ const chartConfig: ChartConfig = {
   },
 }
 
-export function TabSkills() {
-  const [isLoading, setIsLoading] = React.useState(true)
+/** Map API SkillsAnalysis to the local SkillDemand shape used by charts/cards */
+function mapSkillsData(apiData: SkillsAnalysis | undefined) {
+  if (!apiData) return []
+  return apiData.in_demand_skills.map((s) => {
+    const proficiencyToLevel: Record<string, number> = {
+      expert: 90, advanced: 75, intermediate: 55, beginner: 30,
+    }
+    const yourLevel = s.proficiency ? (proficiencyToLevel[s.proficiency.toLowerCase()] ?? 50) : (s.user_has ? 70 : 20)
+    const demandScore = Math.min(100, Math.round((s.demand_count / Math.max(1, apiData.in_demand_skills[0]?.demand_count ?? 1)) * 100))
+    return {
+      skill: s.skill,
+      demandScore,
+      yourLevel,
+      gap: demandScore - yourLevel,
+      trend: "stable" as "up" | "down" | "stable",
+    }
+  })
+}
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 550)
-    return () => clearTimeout(timer)
-  }, [])
+export function TabSkills() {
+  const { data, isLoading, error } = useSkillsAnalysis()
 
   if (isLoading) {
     return <SkillsSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load skills data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const skillDemand = mapSkillsData(data)
 
   return (
     <div className="space-y-6">

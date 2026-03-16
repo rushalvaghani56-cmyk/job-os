@@ -21,7 +21,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { reports } from "./mock-data"
+const reports = [
+  {
+    id: "1",
+    name: "Weekly Summary",
+    type: "weekly" as const,
+    lastGenerated: "2024-02-18",
+    schedule: "Every Monday 9am",
+    recipients: ["you@email.com"],
+  },
+  {
+    id: "2",
+    name: "Monthly Performance",
+    type: "monthly" as const,
+    lastGenerated: "2024-02-01",
+    schedule: "1st of month",
+    recipients: ["you@email.com", "mentor@email.com"],
+  },
+]
 import { 
   Plus, 
   FileText, 

@@ -18,7 +18,7 @@ export function showUndoToast({
   onUndo,
   onExpire,
 }: UndoToastOptions) {
-  let timeoutId: NodeJS.Timeout
+  let timeoutId: NodeJS.Timeout | undefined
   let hasUndone = false
 
   const toastId = toast.custom(

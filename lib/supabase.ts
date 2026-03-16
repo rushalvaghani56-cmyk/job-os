@@ -1,11 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key";
 
 /**
  * Supabase browser client
- * Used for client-side operations
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -26,10 +25,7 @@ export function isSupabaseConfigured(): boolean {
  */
 export async function getSession() {
   const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.error("Error getting session:", error);
-    return null;
-  }
+  if (error) return null;
   return data.session;
 }
 
@@ -38,9 +34,6 @@ export async function getSession() {
  */
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Error getting user:", error);
-    return null;
-  }
+  if (error) return null;
   return data.user;
 }

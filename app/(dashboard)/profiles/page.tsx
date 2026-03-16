@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, GitCompare, Download } from "lucide-react"
+import { Plus, GitCompare, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,17 +23,50 @@ import {
 } from "@/components/ui/select"
 import { ProfileCard } from "@/components/profiles/profile-card"
 import { ProfileComparison } from "@/components/profiles/profile-comparison"
-import { mockProfiles, type CandidateProfile } from "@/lib/profile-types"
+import { useProfiles, useCreateProfile, useCloneProfile, useDeleteProfile, useActivateProfile } from "@/hooks/useProfiles"
+import type { ProfileListItem } from "@/types/profiles"
+import type { CandidateProfile } from "@/lib/profile-types"
 import { toast } from "sonner"
 
-// Use only 3 profiles per spec
-const initialProfiles = mockProfiles.slice(0, 3)
+/** Map API ProfileListItem to the view-layer CandidateProfile shape used by ProfileCard */
+function mapProfileForView(item: ProfileListItem): CandidateProfile {
+  return {
+    id: item.id,
+    name: item.name,
+    targetRole: item.target_role,
+    seniority: "Mid-Level",
+    isActive: item.is_active,
+    stats: {
+      jobsFound: 0,
+      applications: 0,
+      interviews: 0,
+      responses: 0,
+      lastActive: item.updated_at
+        ? new Date(item.updated_at).toLocaleDateString()
+        : "Never",
+    },
+    completeness: {
+      percentage: item.completeness ?? 0,
+      missingItems: [],
+    },
+    marketFitScore: 0,
+    createdAt: item.updated_at?.split("T")[0] ?? "",
+    updatedAt: item.updated_at?.split("T")[0] ?? "",
+  }
+}
 
 export default function ProfilesPage() {
-  const [profiles, setProfiles] = useState<CandidateProfile[]>(initialProfiles)
+  const { data: apiProfiles, isLoading, isError } = useProfiles()
+  const createProfileMutation = useCreateProfile()
+  const cloneProfileMutation = useCloneProfile()
+  const deleteProfileMutation = useDeleteProfile()
+  const activateProfileMutation = useActivateProfile()
+
+  const profiles = (apiProfiles ?? []).map(mapProfileForView)
+
   const [comparisonOpen, setComparisonOpen] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  
+
   // Create profile form state
   const [newProfileName, setNewProfileName] = useState("")
   const [newTargetRole, setNewTargetRole] = useState("")
@@ -50,49 +83,19 @@ export default function ProfilesPage() {
   }
 
   const handleClone = (id: string) => {
-    const profileToClone = profiles.find((p) => p.id === id)
-    if (profileToClone) {
-      const clonedProfile: CandidateProfile = {
-        ...profileToClone,
-        id: `${Date.now()}`,
-        name: `${profileToClone.name} (Copy)`,
-        isActive: false,
-        stats: {
-          jobsFound: 0,
-          applications: 0,
-          interviews: 0,
-          responses: 0,
-          lastActive: "Just now",
-        },
-        createdAt: new Date().toISOString().split("T")[0],
-        updatedAt: new Date().toISOString().split("T")[0],
-      }
-      setProfiles([...profiles, clonedProfile])
-      toast.success("Profile cloned successfully")
-    }
+    cloneProfileMutation.mutate(id)
   }
 
   const handleSwitch = (id: string) => {
-    setProfiles(
-      profiles.map((p) => ({
-        ...p,
-        isActive: p.id === id,
-      }))
-    )
-    toast.success("Switched to profile")
+    activateProfileMutation.mutate(id)
   }
 
   const handleToggleActive = (id: string) => {
-    setProfiles(
-      profiles.map((p) =>
-        p.id === id ? { ...p, isActive: !p.isActive } : p
-      )
-    )
+    activateProfileMutation.mutate(id)
   }
 
   const handleDelete = (id: string) => {
-    setProfiles(profiles.filter((p) => p.id !== id))
-    toast.success("Profile deleted")
+    deleteProfileMutation.mutate(id)
   }
 
   const handleExport = (id: string) => {
@@ -102,43 +105,49 @@ export default function ProfilesPage() {
   const handleCreateProfile = () => {
     if (!newProfileName.trim() || !newTargetRole.trim()) return
 
-    const cloneSource = cloneFromId ? profiles.find((p) => p.id === cloneFromId) : null
-
-    const newProfile: CandidateProfile = {
-      id: `${Date.now()}`,
-      name: newProfileName,
-      targetRole: newTargetRole,
-      seniority: cloneSource?.seniority || "Mid-Level",
-      isActive: false,
-      stats: {
-        jobsFound: 0,
-        applications: 0,
-        interviews: 0,
-        responses: 0,
-        lastActive: "Just now",
-      },
-      completeness: cloneSource && cloneOptions.skills
-        ? { ...cloneSource.completeness }
-        : {
-            percentage: 25,
-            missingItems: [
-              { label: "Add skills", boost: 15 },
-              { label: "Add experience", boost: 20 },
-              { label: "Add education", boost: 10 },
-            ],
+    if (cloneFromId) {
+      cloneProfileMutation.mutate(cloneFromId, {
+        onSuccess: () => {
+          setCreateDialogOpen(false)
+          setNewProfileName("")
+          setNewTargetRole("")
+          setCloneFromId(null)
+          setCloneOptions({ skills: true, experience: true, settings: false, keywords: true })
+        },
+      })
+    } else {
+      createProfileMutation.mutate(
+        {
+          name: newProfileName,
+          target_role: newTargetRole,
+        },
+        {
+          onSuccess: () => {
+            setCreateDialogOpen(false)
+            setNewProfileName("")
+            setNewTargetRole("")
+            setCloneFromId(null)
+            setCloneOptions({ skills: true, experience: true, settings: false, keywords: true })
           },
-      marketFitScore: cloneSource ? Math.round(cloneSource.marketFitScore * 0.7) : 35,
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
+        }
+      )
     }
+  }
 
-    setProfiles([...profiles, newProfile])
-    setCreateDialogOpen(false)
-    setNewProfileName("")
-    setNewTargetRole("")
-    setCloneFromId(null)
-    setCloneOptions({ skills: true, experience: true, settings: false, keywords: true })
-    toast.success("Profile created successfully")
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        Failed to load profiles. Please try again later.
+      </div>
+    )
   }
 
   return (

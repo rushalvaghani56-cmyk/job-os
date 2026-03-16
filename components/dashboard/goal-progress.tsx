@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Target, Sparkles, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useGoals } from "@/hooks/useAnalytics"
 
 interface Goal {
   id: string
@@ -16,23 +17,6 @@ interface Goal {
   target: number
   status: "on-track" | "almost" | "behind"
 }
-
-const mockGoals: Goal[] = [
-  {
-    id: "1",
-    title: "Interviews This Month",
-    current: 3,
-    target: 5,
-    status: "on-track",
-  },
-  {
-    id: "2",
-    title: "Applications This Week",
-    current: 8,
-    target: 10,
-    status: "almost",
-  },
-]
 
 const statusConfig: Record<Goal["status"], { label: string; className: string }> = {
   "on-track": {
@@ -49,15 +33,40 @@ const statusConfig: Record<Goal["status"], { label: string; className: string }>
   },
 }
 
+function mapApiStatus(status: string): Goal["status"] {
+  switch (status) {
+    case "on_track":
+    case "completed":
+      return "on-track"
+    case "at_risk":
+      return "almost"
+    case "behind":
+      return "behind"
+    default:
+      return "on-track"
+  }
+}
+
 interface GoalProgressProps {
   hasGoals?: boolean
   isLoading?: boolean
 }
 
-export function GoalProgress({ hasGoals = true, isLoading = false }: GoalProgressProps) {
+export function GoalProgress({ hasGoals: hasGoalsProp, isLoading: isLoadingProp }: GoalProgressProps) {
+  const { data: apiGoals, isLoading: goalsLoading } = useGoals()
   const advice = "You're on pace. Consider targeting smaller companies for faster interview cycles."
 
-  if (isLoading) {
+  const loading = isLoadingProp || goalsLoading
+  const goals: Goal[] = (apiGoals ?? []).map((g) => ({
+    id: g.id,
+    title: g.name,
+    current: g.current,
+    target: g.target,
+    status: mapApiStatus(g.status),
+  }))
+  const hasGoals = hasGoalsProp ?? goals.length > 0
+
+  if (loading) {
     return (
       <Card className="p-5 h-full flex flex-col">
         <CardHeader className="p-0 pb-4">
@@ -124,7 +133,7 @@ export function GoalProgress({ hasGoals = true, isLoading = false }: GoalProgres
       <CardContent className="p-0 flex-1 flex flex-col gap-4">
         {/* Goals List */}
         <div className="space-y-4">
-          {mockGoals.map((goal) => {
+          {goals.map((goal) => {
             const percentage = Math.round((goal.current / goal.target) * 100)
             const status = statusConfig[goal.status]
 

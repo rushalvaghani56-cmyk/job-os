@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { toast } from "sonner"
-import { InboxIcon, ArrowLeftIcon, PartyPopperIcon } from "lucide-react"
+import { InboxIcon, ArrowLeftIcon, PartyPopperIcon, AlertCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -16,25 +17,59 @@ import { DetailCoverLetter } from "@/components/approval/detail-cover-letter"
 import { DetailOutreach } from "@/components/approval/detail-outreach"
 import { DetailAnswer } from "@/components/approval/detail-answer"
 import { ActionBar } from "@/components/approval/action-bar"
-import {
-  mockApprovalItems,
-  mockResumeContent,
-  mockJobRequirements,
-  mockQAReport,
-  mockCoverLetterContent,
-  mockOutreachContent,
-  mockAnswerContent,
-  mockAnswerContentLowConfidence,
-} from "@/components/approval/mock-data"
-import type { ApprovalItem } from "@/components/approval/types"
+import { useReviewQueue } from "@/hooks/useReview"
+import type { ApprovalItem, ResumeContent, CoverLetterContent, OutreachContent, JobRequirement, QAReport } from "@/components/approval/types"
+
+// Empty defaults for detail view data (will be replaced by per-item API calls)
+const defaultResumeContent: ResumeContent = { sections: [] }
+const defaultJobRequirements: JobRequirement[] = []
+const defaultQAReport: QAReport = { hallucinations: [], factChecks: [], toneAnalysis: [], overallScore: 0 }
+const defaultCoverLetterContent: CoverLetterContent = { content: "", wordCount: 0, personalizationHighlights: [] }
+const defaultOutreachContent: OutreachContent = {
+  contactName: "", contactTitle: "", contactCompany: "", channel: "linkedin",
+  warmth: "cold", message: "", characterCount: 0, personalizationHooks: [], autoSend: false,
+}
+const defaultAnswerContent = {
+  question: "", answer: "", confidence: "low" as const, wordCount: 0, sources: [] as string[],
+}
+
+function mapReviewToApproval(item: Record<string, unknown>): ApprovalItem {
+  const priorityMap: Record<string, "dream" | "high" | "medium"> = {
+    high: "dream",
+    medium: "high",
+    low: "medium",
+  }
+  return {
+    id: String(item.id ?? ""),
+    type: (item.type as ApprovalItem["type"]) ?? "resume",
+    priority: priorityMap[String(item.priority ?? "medium")] ?? "medium",
+    status: (item.status as ApprovalItem["status"]) ?? "pending",
+    jobId: String(item.job_id ?? ""),
+    jobTitle: String(item.job_title ?? ""),
+    company: String(item.company ?? ""),
+    companyLogo: (item.company_logo_url as string) ?? undefined,
+    qualityScore: (item.quality_score as number) ?? 0,
+    createdAt: item.created_at ? new Date(item.created_at as string) : new Date(),
+  }
+}
 
 export default function ReviewPage() {
-  const [items, setItems] = useState(mockApprovalItems)
-  const [selectedId, setSelectedId] = useState<string | null>(
-    mockApprovalItems[0]?.id ?? null
-  )
+  const { data: apiItems, isLoading: apiLoading, error } = useReviewQueue()
+  const [items, setItems] = useState<ApprovalItem[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
+
+  // Hydrate local state from API
+  useEffect(() => {
+    if (apiItems) {
+      const mapped = apiItems.map((item) => mapReviewToApproval(item as unknown as Record<string, unknown>))
+      setItems(mapped)
+      if (!selectedId && mapped.length > 0) {
+        setSelectedId(mapped[0].id)
+      }
+    }
+  }, [apiItems]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedItem = items.find((item) => item.id === selectedId)
 
@@ -106,7 +141,7 @@ export default function ReviewPage() {
       }
 
       // Show toast with undo
-      let undoTimeout: NodeJS.Timeout
+      let undoTimeout: NodeJS.Timeout | undefined
       toast.success("Approved & submitted", {
         description: `${selectedItem.jobTitle} at ${selectedItem.company}`,
         duration: 5000,
@@ -223,28 +258,24 @@ export default function ReviewPage() {
         return (
           <DetailResume
             item={selectedItem}
-            content={mockResumeContent}
-            requirements={mockJobRequirements}
-            qaReport={mockQAReport}
+            content={defaultResumeContent}
+            requirements={defaultJobRequirements}
+            qaReport={defaultQAReport}
           />
         )
       case "cover_letter":
         return (
           <DetailCoverLetter
             item={selectedItem}
-            content={mockCoverLetterContent}
-            requirements={mockJobRequirements}
+            content={defaultCoverLetterContent}
+            requirements={defaultJobRequirements}
           />
         )
       case "outreach":
       case "email":
-        return <DetailOutreach item={selectedItem} content={mockOutreachContent} />
+        return <DetailOutreach item={selectedItem} content={defaultOutreachContent} />
       case "answer":
-        // Use low confidence content for one of the answer items
-        const answerContent = selectedItem.qualityScore < 70 
-          ? mockAnswerContentLowConfidence 
-          : mockAnswerContent
-        return <DetailAnswer item={selectedItem} content={answerContent} />
+        return <DetailAnswer item={selectedItem} content={defaultAnswerContent} />
       default:
         return (
           <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -255,6 +286,33 @@ export default function ReviewPage() {
   }
 
   const pendingItems = items.filter((item) => item.status === "pending")
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+        <AlertCircle className="size-10 text-destructive" />
+        <p className="text-sm font-medium">Failed to load review queue</p>
+        <p className="text-xs">{(error as Error).message}</p>
+      </div>
+    )
+  }
+
+  if (apiLoading) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 gap-4 p-4">
+          <div className="w-[40%] space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-xl" />
+            ))}
+          </div>
+          <div className="flex-1">
+            <Skeleton className="h-full rounded-xl" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col">

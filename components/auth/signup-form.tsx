@@ -1,11 +1,15 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PasswordInput } from "./password-input"
 import { FieldGroup, Field } from "@/components/ui/field"
+import { useAuthStore } from "@/stores/authStore"
+import { getErrorMessage } from "@/lib/apiHelpers"
+import { supabase } from "@/lib/supabase"
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -39,21 +43,49 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   const [error, setError] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [confirmPassword, setConfirmPassword] = React.useState("")
+  const router = useRouter()
+  const signup = useAuthStore((s) => s.signup)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     if (password !== confirmPassword) {
       setError("Passwords do not match")
       return
     }
-    
+
     setIsLoading(true)
     setError("")
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
+
+    const formData = new FormData(e.currentTarget)
+    const fullName = formData.get("fullName") as string
+    const email = formData.get("email") as string
+
+    try {
+      await signup(fullName, email, password)
+      const { isAuthenticated } = useAuthStore.getState()
+      if (isAuthenticated) {
+        router.push("/onboarding/step-1")
+      } else {
+        router.push("/auth/verify-email")
+      }
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleSignup = async () => {
+    setIsLoading(true)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/onboarding/step-1` },
+    })
+    if (error) {
+      setError(getErrorMessage(error))
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -63,28 +95,31 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           <Label htmlFor="signup-name">Full name</Label>
           <Input
             id="signup-name"
+            name="fullName"
             type="text"
             placeholder="John Doe"
             required
             autoComplete="name"
           />
         </Field>
-        
+
         <Field>
           <Label htmlFor="signup-email">Email</Label>
           <Input
             id="signup-email"
+            name="email"
             type="email"
             placeholder="you@company.com"
             required
             autoComplete="email"
           />
         </Field>
-        
+
         <Field>
           <Label htmlFor="signup-password">Password</Label>
           <PasswordInput
             id="signup-password"
+            name="password"
             placeholder="Create a password"
             required
             autoComplete="new-password"
@@ -93,7 +128,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        
+
         <Field>
           <Label htmlFor="signup-confirm-password">Confirm password</Label>
           <PasswordInput
@@ -139,6 +174,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         variant="outline"
         className="w-full rounded-lg"
         disabled={isLoading}
+        onClick={handleGoogleSignup}
       >
         <GoogleIcon className="size-4 mr-2" />
         Continue with Google
