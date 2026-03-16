@@ -44,21 +44,23 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError<ApiError>) => {
     const status = error.response?.status;
-    const errorCode = error.response?.data?.error?.code;
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
-    // 401: Token expired or invalid → attempt refresh, then logout
-    if (status === 401) {
-      if (errorCode === "AUTH_TOKEN_EXPIRED") {
-        const { data, error: refreshError } =
-          await supabase.auth.refreshSession();
+    // 401: Try refreshing the token once, then sign out if that fails
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
-        if (data.session && !refreshError) {
-          const originalRequest = error.config!;
-          originalRequest.headers.Authorization = `Bearer ${data.session.access_token}`;
-          return apiClient(originalRequest);
-        }
+      const { data, error: refreshError } =
+        await supabase.auth.refreshSession();
+
+      if (data.session && !refreshError) {
+        originalRequest.headers.Authorization = `Bearer ${data.session.access_token}`;
+        return apiClient(originalRequest);
       }
 
+      // Refresh failed — sign out
       await supabase.auth.signOut();
 
       if (typeof window !== "undefined") {
