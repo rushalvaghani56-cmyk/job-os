@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         password,
         options: {
           data: { full_name: fullName },
-          emailRedirectTo: `${window.location.origin}/onboarding/step-1`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding/step-1`,
         },
       });
       if (error) throw error;
