@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/table"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import { sourceData } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useSourceData } from "@/hooks/useAnalytics"
+import type { SourceData as APISourceData } from "@/types/analytics"
 
 function SourcesSkeleton() {
   return (
@@ -61,17 +63,36 @@ const chartConfig: ChartConfig = {
   },
 }
 
-export function TabSources() {
-  const [isLoading, setIsLoading] = React.useState(true)
+/** Map API SourceData to the local shape used by charts/table */
+function mapSourceData(apiData: APISourceData[]) {
+  return apiData.map((s) => ({
+    source: s.source,
+    logo: s.source.substring(0, 2).toUpperCase(),
+    jobsFound: s.jobs_discovered,
+    scored80Plus: Math.round(s.jobs_discovered * (s.avg_match_score / 100)),
+    applied: s.applications,
+    interviews: s.interviews,
+    scoreAvg: s.avg_match_score,
+    costPerInterview: s.cost_per_application ?? 0,
+  }))
+}
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
+export function TabSources() {
+  const { data, isLoading, error } = useSourceData()
 
   if (isLoading) {
     return <SourcesSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load source data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const sourceData = mapSourceData(data ?? [])
 
   return (
     <div className="space-y-6">

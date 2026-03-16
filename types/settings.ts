@@ -163,8 +163,8 @@ export interface UserSettings {
   // General
   /** Display name */
   display_name: string;
-  /** Email */
-  email: string;
+  /** User email address */
+  user_email: string;
   /** Avatar URL */
   avatar_url: string | null;
   /** Timezone */

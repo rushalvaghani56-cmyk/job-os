@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Briefcase,
   FileSearch,
@@ -20,48 +21,7 @@ import { DiscoveryStatus } from "@/components/dashboard/discovery-status"
 import { GoalProgress } from "@/components/dashboard/goal-progress"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
 import { QuickActions } from "@/components/dashboard/quick-actions"
-
-const stats = [
-  {
-    title: "Jobs Discovered",
-    value: "247",
-    subtitle: "Today: 12 | This week: 47",
-    trend: { value: "15% vs last week", direction: "up" as const },
-    icon: Briefcase,
-    accentColor: "primary" as const,
-  },
-  {
-    title: "Pending Reviews",
-    value: "16",
-    subtitle: "Oldest: 2 hours ago",
-    trend: undefined,
-    icon: FileSearch,
-    accentColor: "amber" as const,
-    miniBar: {
-      segments: [
-        { value: 19, color: "bg-amber-500" }, // 3 dream
-        { value: 31, color: "bg-red-500" }, // 5 high
-        { value: 50, color: "bg-blue-500" }, // 8 medium
-      ],
-    },
-  },
-  {
-    title: "Active Applications",
-    value: "38",
-    subtitle: "5 new this week",
-    trend: { value: "8%", direction: "up" as const },
-    icon: Send,
-    accentColor: "blue" as const,
-  },
-  {
-    title: "Response Rate",
-    value: "24%",
-    subtitle: "Industry avg: 18%",
-    trend: { value: "3% vs last month", direction: "up" as const },
-    icon: TrendingUp,
-    accentColor: "green" as const,
-  },
-]
+import { useDashboardMetrics } from "@/hooks/useAnalytics"
 
 // Mock: In production, this would come from user preferences/API
 const UNREAD_CHANGELOG_COUNT = 3
@@ -105,14 +65,56 @@ function ChangelogBanner({ onDismiss }: { onDismiss: () => void }) {
 
 export default function HomePage() {
   const [showChangelogBanner, setShowChangelogBanner] = useState(true)
-  
+  const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics()
+
+  const stats = useMemo(() => [
+    {
+      title: "Jobs Discovered",
+      value: String(metrics?.jobs_today ?? 0),
+      subtitle: `Today: ${metrics?.jobs_today ?? 0}`,
+      trend: metrics?.jobs_today_change
+        ? { value: `${Math.abs(metrics.jobs_today_change)}% vs last week`, direction: metrics.jobs_today_change >= 0 ? "up" as const : "down" as const }
+        : undefined,
+      icon: Briefcase,
+      accentColor: "primary" as const,
+    },
+    {
+      title: "Pending Reviews",
+      value: String(metrics?.pending_reviews ?? 0),
+      subtitle: "",
+      trend: undefined,
+      icon: FileSearch,
+      accentColor: "amber" as const,
+    },
+    {
+      title: "Active Applications",
+      value: String(metrics?.active_applications ?? 0),
+      subtitle: "",
+      trend: metrics?.active_applications_change
+        ? { value: `${Math.abs(metrics.active_applications_change)}%`, direction: metrics.active_applications_change >= 0 ? "up" as const : "down" as const }
+        : undefined,
+      icon: Send,
+      accentColor: "blue" as const,
+    },
+    {
+      title: "Response Rate",
+      value: `${metrics?.response_rate ?? 0}%`,
+      subtitle: "",
+      trend: metrics?.response_rate_change
+        ? { value: `${Math.abs(metrics.response_rate_change)}% vs last month`, direction: metrics.response_rate_change >= 0 ? "up" as const : "down" as const }
+        : undefined,
+      icon: TrendingUp,
+      accentColor: "green" as const,
+    },
+  ], [metrics])
+
   return (
     <div className="space-y-6">
       {/* Changelog Banner */}
       {showChangelogBanner && UNREAD_CHANGELOG_COUNT > 0 && (
         <ChangelogBanner onDismiss={() => setShowChangelogBanner(false)} />
       )}
-      
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Dashboard</h1>
@@ -123,18 +125,23 @@ export default function HomePage() {
 
       {/* Row 1: Stats Grid - 4 columns */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatsCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            subtitle={stat.subtitle}
-            trend={stat.trend}
-            icon={stat.icon}
-            accentColor={stat.accentColor}
-            miniBar={stat.miniBar}
-          />
-        ))}
+        {metricsLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[120px] rounded-xl" />
+          ))
+        ) : (
+          stats.map((stat) => (
+            <StatsCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              subtitle={stat.subtitle}
+              trend={stat.trend}
+              icon={stat.icon}
+              accentColor={stat.accentColor}
+            />
+          ))
+        )}
       </div>
 
       {/* Row 2: Action Required (60%) | Copilot Preview (40%) */}
@@ -153,13 +160,7 @@ export default function HomePage() {
           <DiscoveryStatus />
         </div>
         <div className="lg:col-span-3">
-          <GoalProgress
-            hasGoals={true}
-            goalTitle="Interviews This Month"
-            current={3}
-            target={5}
-            advice="You're on pace. Consider targeting smaller companies for faster cycles."
-          />
+          <GoalProgress hasGoals={true} />
         </div>
       </div>
 

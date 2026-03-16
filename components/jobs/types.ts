@@ -89,7 +89,7 @@ export interface JobFilters {
   salaryRange: [number, number]
   salaryCurrency: string
   sources: JobSource[]
-  dateRange: { from?: Date; to?: Date }
+  dateRange: { from?: Date; to?: Date; preset?: string }
   dreamCompanyOnly: boolean
   hasContentOnly: boolean
   showBlacklisted: boolean

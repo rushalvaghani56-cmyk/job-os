@@ -1,7 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
+import apiClient from "@/lib/api";
 import type { User } from "@/types/database";
 
 interface AuthState {
@@ -9,144 +10,136 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   hasCompletedOnboarding: boolean;
+  error: string | null;
+
+  initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
+  signup: (fullName: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   setOnboardingComplete: (complete: boolean) => void;
-  toggleAdminRole: () => void;
+  clearError: () => void;
 }
 
-const mockUser: User = {
-  id: "user_01",
-  email: "alex.chen@example.com",
-  name: "Alex Chen",
-  avatar_url: null,
-  role: "user",
-  has_completed_onboarding: true,
-  timezone: "America/Los_Angeles",
-  created_at: "2024-01-15T10:00:00Z",
-  updated_at: "2024-03-10T15:30:00Z",
-  last_login_at: "2024-03-14T08:00:00Z",
-};
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  hasCompletedOnboarding: false,
+  error: null,
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      hasCompletedOnboarding: true,
+  initialize: async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      login: async (email: string, _password: string) => {
-        set({ isLoading: true });
-        
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        
-        // Mock successful login
-        const user: User = {
-          ...mockUser,
-          email,
-          name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        };
-        
+      if (session) {
+        const response = await apiClient.get<{ user: User }>("/api/v1/auth/me");
+        const user = response.data.user;
         set({
           user,
           isAuthenticated: true,
           isLoading: false,
           hasCompletedOnboarding: user.has_completed_onboarding,
         });
-      },
+      } else {
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      }
+    } catch {
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
 
-      signup: async (name: string, email: string, _password: string) => {
-        set({ isLoading: true });
-        
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        
-        // Mock successful signup
-        const user: User = {
-          ...mockUser,
-          id: `user_${Date.now()}`,
-          email,
-          name,
-          has_completed_onboarding: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_login_at: new Date().toISOString(),
-        };
-        
+  login: async (email: string, password: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+
+      const response = await apiClient.get<{ user: User }>("/api/v1/auth/me");
+      const user = response.data.user;
+      set({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        hasCompletedOnboarding: user.has_completed_onboarding,
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Login failed",
+      });
+      throw error;
+    }
+  },
+
+  signup: async (fullName: string, email: string, password: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      });
+      if (error) throw error;
+
+      if (data.session) {
+        const response = await apiClient.get<{ user: User }>("/api/v1/auth/me");
+        const user = response.data.user;
         set({
           user,
           isAuthenticated: true,
           isLoading: false,
           hasCompletedOnboarding: false,
         });
-      },
-
-      logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-      },
-
-      refreshToken: async () => {
-        const { user } = get();
-        if (!user) return;
-        
-        set({ isLoading: true });
-        
-        // Simulate token refresh
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        
-        set({
-          user: {
-            ...user,
-            last_login_at: new Date().toISOString(),
-          },
-          isLoading: false,
-        });
-      },
-
-      setUser: (user: User | null) => {
-        set({
-          user,
-          isAuthenticated: !!user,
-          hasCompletedOnboarding: user?.has_completed_onboarding ?? false,
-        });
-      },
-
-setOnboardingComplete: (complete: boolean) => {
-        const { user } = get();
-        if (user) {
-          set({
-            user: { ...user, has_completed_onboarding: complete },
-            hasCompletedOnboarding: complete,
-          });
-        }
-      },
-
-      toggleAdminRole: () => {
-        const { user } = get();
-        if (user) {
-          const newRole = user.role === "super_admin" ? "user" : "super_admin";
-          set({
-            user: { ...user, role: newRole },
-          });
-        }
-      },
-    }),
-    {
-      name: "auth-storage",
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        hasCompletedOnboarding: state.hasCompletedOnboarding,
-      }),
+      } else {
+        // Email verification required
+        set({ isLoading: false });
+      }
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Signup failed",
+      });
+      throw error;
     }
-  )
-);
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+    set({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      hasCompletedOnboarding: false,
+      error: null,
+    });
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
+    }
+  },
+
+  setUser: (user: User | null) => {
+    set({
+      user,
+      isAuthenticated: !!user,
+      hasCompletedOnboarding: user?.has_completed_onboarding ?? false,
+    });
+  },
+
+  setOnboardingComplete: (complete: boolean) => {
+    const { user } = get();
+    if (user) {
+      set({
+        user: { ...user, has_completed_onboarding: complete },
+        hasCompletedOnboarding: complete,
+      });
+    }
+  },
+
+  clearError: () => set({ error: null }),
+}));

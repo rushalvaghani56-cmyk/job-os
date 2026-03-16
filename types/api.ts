@@ -80,3 +80,32 @@ export interface BatchResult<T> {
     error: string;
   }>;
 }
+
+/**
+ * Standard success response
+ */
+export interface SuccessResponse {
+  success: true;
+}
+
+/**
+ * Async task response
+ */
+export interface TaskResponse {
+  task_id: string;
+}
+
+/**
+ * Field-level validation error
+ */
+export interface FieldError {
+  field: string;
+  message: string;
+}
+
+/**
+ * Data envelope wrapper
+ */
+export interface DataResponse<T> {
+  data: T;
+}

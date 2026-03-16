@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -14,13 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { Search, Plus, Filter, Users, Loader2, UserPlus, Linkedin } from "lucide-react"
+import { Search, Plus, Filter, Users, Loader2, UserPlus, Linkedin, AlertCircle } from "lucide-react"
 import { ContactCard } from "@/components/outreach/contact-card"
 import { ContactDetail, EmptyContactDetail } from "@/components/outreach/contact-detail"
 import { StatsBar } from "@/components/outreach/stats-bar"
+import { useContacts } from "@/hooks/useOutreach"
 import {
-  mockContacts,
   mockMessages,
   mockSummaryStats,
   mockProspectedContacts,
@@ -32,6 +33,8 @@ import {
 
 export default function OutreachPage() {
   const { toast } = useToast()
+  const { data: apiContacts, isLoading, error } = useContacts()
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [companyFilter, setCompanyFilter] = useState<string>("all")
@@ -40,6 +43,15 @@ export default function OutreachPage() {
   const [prospectCompany, setProspectCompany] = useState("")
   const [isSearchingProspects, setIsSearchingProspects] = useState(false)
   const [showProspects, setShowProspects] = useState(false)
+
+  // Hydrate local state from API
+  useEffect(() => {
+    if (apiContacts) {
+      setContacts(
+        (apiContacts as unknown as Contact[])
+      )
+    }
+  }, [apiContacts])
 
   const handleSearchProspects = () => {
     if (!prospectCompany.trim()) return
@@ -58,12 +70,12 @@ export default function OutreachPage() {
   }
 
   const companies = useMemo(() => {
-    const uniqueCompanies = [...new Set(mockContacts.map((c) => c.company))]
+    const uniqueCompanies = [...new Set(contacts.map((c) => c.company))]
     return uniqueCompanies.sort()
-  }, [])
+  }, [contacts])
 
   const filteredContacts = useMemo(() => {
-    return mockContacts.filter((contact) => {
+    return contacts.filter((contact) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
@@ -91,11 +103,47 @@ export default function OutreachPage() {
 
       return true
     })
-  }, [searchQuery, companyFilter, warmthFilter, statusFilter])
+  }, [contacts, searchQuery, companyFilter, warmthFilter, statusFilter])
 
   const selectedContact = selectedContactId
-    ? mockContacts.find((c) => c.id === selectedContactId)
+    ? contacts.find((c) => c.id === selectedContactId)
     : null
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+        <AlertCircle className="size-10 text-destructive" />
+        <p className="text-sm font-medium">Failed to load contacts</p>
+        <p className="text-xs">{(error as Error).message}</p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-[calc(100dvh-3.5rem)]">
+        <div className="shrink-0 p-5 border-b border-border">
+          <Skeleton className="h-8 w-48 mb-4" />
+          <div className="flex gap-3">
+            <Skeleton className="h-9 flex-1 max-w-sm" />
+            <Skeleton className="h-9 w-[140px]" />
+            <Skeleton className="h-9 w-[120px]" />
+            <Skeleton className="h-9 w-[140px]" />
+          </div>
+        </div>
+        <div className="flex-1 flex">
+          <div className="w-[40%] border-r border-border p-3 space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
+            ))}
+          </div>
+          <div className="flex-1 p-4">
+            <Skeleton className="h-full rounded-xl" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.5rem)]">

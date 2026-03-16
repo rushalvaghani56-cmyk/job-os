@@ -7,9 +7,9 @@ import {
   Table2,
   List,
   ChevronDown,
-  Filter,
   Bookmark,
   SlidersHorizontal,
+  Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -34,8 +34,9 @@ import { JobTableView } from "@/components/jobs/job-table-view"
 import { JobCardView } from "@/components/jobs/job-card-view"
 import { JobCompactView } from "@/components/jobs/job-compact-view"
 import { BulkActionsBar } from "@/components/jobs/bulk-actions-bar"
-import { mockJobs } from "@/components/jobs/mock-data"
-import type { JobFilters, ViewMode, SortOption } from "@/components/jobs/types"
+import { useJobs } from "@/hooks/useJobs"
+import type { JobListItem } from "@/types/jobs"
+import type { Job, JobFilters, ViewMode, SortOption } from "@/components/jobs/types"
 
 const defaultFilters: JobFilters = {
   scoreRange: [0, 100],
@@ -64,6 +65,43 @@ const sortOptions: { value: SortOption; label: string }[] = [
   { value: "status", label: "Status" },
 ]
 
+/** Map API JobListItem to the view-layer Job shape used by table/card/compact views */
+function mapJobForView(item: JobListItem): Job {
+  return {
+    id: item.id,
+    title: item.title,
+    company: {
+      name: item.company,
+      logo: item.company_logo_url ?? undefined,
+      isDreamCompany: item.is_dream_company,
+    },
+    score: item.match_score ?? 0,
+    confidence: 0.8, // not available in list item
+    status: item.status as Job["status"],
+    location: item.location,
+    locationType: (item.work_location_type === "hybrid" ? "hybrid_flex" : item.work_location_type) as Job["locationType"],
+    seniority: "mid" as Job["seniority"], // not available in list item
+    employmentType: "full_time" as Job["employmentType"], // not available in list item
+    salary: item.salary_max
+      ? {
+          min: item.salary_min ?? 0,
+          max: item.salary_max,
+          currency: item.salary_currency,
+        }
+      : undefined,
+    postedAt: new Date(item.discovered_at),
+    source: item.source as Job["source"],
+    skills: {
+      matched: [],
+      missing: [],
+    },
+    decision: item.decision === "auto_apply" ? "auto" : (item.decision as Job["decision"]) ?? "review",
+    hasContent: false,
+    isPotentialScam: false,
+    isBlacklisted: false,
+  }
+}
+
 export default function JobsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("table")
   const [searchQuery, setSearchQuery] = useState("")
@@ -72,9 +110,15 @@ export default function JobsPage() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
+  const { data: jobsData, isLoading, isError } = useJobs()
+  const allJobs = useMemo(
+    () => (jobsData?.pages.flatMap((p) => p.data) ?? []).map(mapJobForView),
+    [jobsData]
+  )
+
   // Filter and sort jobs
   const filteredJobs = useMemo(() => {
-    let result = [...mockJobs]
+    let result = [...allJobs]
 
     // Apply search
     if (searchQuery) {
@@ -156,7 +200,7 @@ export default function JobsPage() {
     })
 
     return result
-  }, [searchQuery, filters, sortOption])
+  }, [allJobs, searchQuery, filters, sortOption])
 
   const handleSelectJob = (jobId: string) => {
     setSelectedJobs((prev) =>
@@ -184,6 +228,22 @@ export default function JobsPage() {
     (filters.dreamCompanyOnly ? 1 : 0) +
     (filters.hasContentOnly ? 1 : 0) +
     (filters.scoreRange[0] > 0 || filters.scoreRange[1] < 100 ? 1 : 0)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        Failed to load jobs. Please try again later.
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full">

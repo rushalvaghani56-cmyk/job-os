@@ -30,7 +30,7 @@ export default function OnboardingStep4() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isDraggingTemplate, setIsDraggingTemplate] = useState(false)
-  const [resumes, setResumes] = useState<UploadedResume[]>(data.masterResumes || [])
+  const [resumes, setResumes] = useState<UploadedResume[]>((data.masterResumes || []) as UploadedResume[])
   const [template, setTemplate] = useState<{ name: string; size: number } | null>(
     data.resumeTemplate ? { name: data.resumeTemplate.name, size: data.resumeTemplate.size } : null
   )

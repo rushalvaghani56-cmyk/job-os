@@ -15,7 +15,8 @@ import {
 } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import { rejectionData } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useRejectionData } from "@/hooks/useAnalytics"
 import { cn } from "@/lib/utils"
 
 function RejectionsSkeleton() {
@@ -57,16 +58,25 @@ const pieColors = [
 
 export function TabRejections() {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 700)
-    return () => clearTimeout(timer)
-  }, [])
+  const { data, isLoading, error } = useRejectionData()
 
   if (isLoading) {
     return <RejectionsSkeleton />
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load rejection data. Please try again later.</p>
+      </div>
+    )
+  }
+
+  const rejectionData = (data?.by_reason ?? []).map((r) => ({
+    reason: r.reason,
+    count: r.count,
+    percentage: r.percentage,
+  }))
 
   return (
     <div className="space-y-6">

@@ -147,10 +147,7 @@ export function ActionRequiredPanel({ isLoading = false }: ActionRequiredPanelPr
             icon={CheckCircle}
             title="All caught up!"
             description="No actions pending."
-            action={{
-              label: "Browse Jobs",
-              href: "/jobs",
-            }}
+            actionLabel="Browse Jobs"
           />
         </CardContent>
       </Card>

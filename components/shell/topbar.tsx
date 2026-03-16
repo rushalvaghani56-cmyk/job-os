@@ -17,7 +17,6 @@ import {
   Check,
   Menu,
   Shield,
-  ShieldOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -40,42 +39,20 @@ import {
 } from "@/components/ui/popover"
 import { useShell } from "./shell-context"
 import { useAuthStore } from "@/stores/authStore"
-
-interface Profile {
-  id: string
-  name: string
-  role: string
-  isActive: boolean
-}
-
-interface Notification {
-  id: string
-  title: string
-  description: string
-  time: string
-  read: boolean
-}
-
-const mockProfiles: Profile[] = [
-  { id: "1", name: "Senior Frontend", role: "Senior Frontend Engineer", isActive: true },
-  { id: "2", name: "Full Stack", role: "Full Stack Developer", isActive: false },
-  { id: "3", name: "Tech Lead", role: "Engineering Manager", isActive: false },
-]
-
-const mockNotifications: Notification[] = [
-  { id: "1", title: "New job match", description: "15 new jobs match your Senior Frontend profile", time: "2m ago", read: false },
-  { id: "2", title: "Application viewed", description: "Stripe viewed your application", time: "1h ago", read: false },
-  { id: "3", title: "Interview scheduled", description: "Interview with Vercel on Friday at 2pm", time: "3h ago", read: true },
-  { id: "4", title: "Resume feedback", description: "AI completed resume optimization", time: "1d ago", read: true },
-  { id: "5", title: "Weekly summary", description: "Your job search stats for this week", time: "2d ago", read: true },
-]
+import { useProfiles, useActivateProfile } from "@/hooks/useProfiles"
+import { useNotifications, useUnreadCount, useMarkNotificationRead } from "@/hooks/useNotifications"
 
 export function Topbar() {
   const { theme, setTheme } = useTheme()
   const { sidebarCollapsed, toggleCopilot, copilotOpen, setMobileMenuOpen, setCommandPaletteOpen } = useShell()
-  const { user, toggleAdminRole, logout } = useAuthStore()
-  const [activeProfile, setActiveProfile] = React.useState(mockProfiles[0])
-  const unreadCount = mockNotifications.filter((n) => !n.read).length
+  const { user, logout } = useAuthStore()
+  const { data: profiles = [] } = useProfiles()
+  const activateProfile = useActivateProfile()
+  const { data: notifications = [] } = useNotifications()
+  const { data: unreadCounts } = useUnreadCount()
+  const markRead = useMarkNotificationRead()
+  const unreadCount = unreadCounts?.total_unread ?? 0
+  const activeProfile = React.useMemo(() => profiles.find((p) => p.is_active) ?? profiles[0], [profiles])
   const isAdmin = user?.role === "super_admin"
 
   return (
@@ -130,27 +107,29 @@ export function Topbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-2 hidden sm:flex items-center">
-              <span className="max-w-[120px] truncate text-sm">{activeProfile.name}</span>
-              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
-                78% fit
-              </span>
+              <span className="max-w-[120px] truncate text-sm">{activeProfile?.name ?? "No profile"}</span>
+              {activeProfile && (
+                <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                  {activeProfile.completeness}% fit
+                </span>
+              )}
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Switch Profile</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {mockProfiles.map((profile) => (
+            {profiles.map((profile) => (
               <DropdownMenuItem
                 key={profile.id}
-                onClick={() => setActiveProfile(profile)}
+                onClick={() => activateProfile.mutate(profile.id)}
                 className="flex items-center justify-between"
               >
                 <div className="flex flex-col">
                   <span className="font-medium">{profile.name}</span>
-                  <span className="text-xs text-muted-foreground">{profile.role}</span>
+                  <span className="text-xs text-muted-foreground">{profile.target_role}</span>
                 </div>
-                {profile.id === activeProfile.id && (
+                {profile.id === activeProfile?.id && (
                   <Check className="h-4 w-4 text-primary" />
                 )}
               </DropdownMenuItem>
@@ -189,24 +168,25 @@ export function Topbar() {
               )}
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {mockNotifications.map((notification) => (
+              {notifications.slice(0, 5).map((notification) => (
                 <div
                   key={notification.id}
+                  onClick={() => { if (!notification.is_read) markRead.mutate(notification.id) }}
                   className={cn(
                     "flex gap-3 border-b px-4 py-3 last:border-0 cursor-pointer hover:bg-muted/50 transition-colors",
-                    !notification.read && "bg-primary/5"
+                    !notification.is_read && "bg-primary/5"
                   )}
                 >
                   <div
                     className={cn(
                       "mt-1 h-2 w-2 shrink-0 rounded-full",
-                      notification.read ? "bg-transparent" : "bg-primary"
+                      notification.is_read ? "bg-transparent" : "bg-primary"
                     )}
                   />
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium leading-none">{notification.title}</p>
-                    <p className="text-xs text-muted-foreground">{notification.description}</p>
-                    <p className="text-xs text-muted-foreground">{notification.time}</p>
+                    <p className="text-xs text-muted-foreground">{notification.body}</p>
+                    <p className="text-xs text-muted-foreground">{notification.created_at}</p>
                   </div>
                 </div>
               ))}
@@ -262,7 +242,7 @@ export function Topbar() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{user?.name || "John Doe"}</span>
+                <span>{user?.full_name || "User"}</span>
                 <span className="text-xs font-normal text-muted-foreground">{user?.email || "john@example.com"}</span>
               </div>
             </DropdownMenuLabel>
@@ -287,20 +267,6 @@ export function Topbar() {
                 </Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={toggleAdminRole} className="gap-2">
-              {isAdmin ? (
-                <>
-                  <ShieldOff className="mr-2 h-4 w-4 text-amber-500" />
-                  <span>Disable Admin Mode</span>
-                </>
-              ) : (
-                <>
-                  <Shield className="mr-2 h-4 w-4 text-primary" />
-                  <span>Enable Admin Mode</span>
-                </>
-              )}
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" />

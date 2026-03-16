@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { toast } from "sonner"
 import {
   KanbanIcon,
@@ -9,6 +9,7 @@ import {
   SearchIcon,
   FilterIcon,
   PlusIcon,
+  AlertCircle,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -30,21 +31,42 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 import { KanbanView } from "@/components/applications/kanban-view"
 import { TableView } from "@/components/applications/table-view"
 import { CalendarView } from "@/components/applications/calendar-view"
-import { mockApplications, mockCalendarEvents } from "@/components/applications/mock-data"
+import { useApplications } from "@/hooks/useApplications"
 import {
   APPLICATION_COLUMNS,
   getStatusLabel,
   type Application,
   type ApplicationStatus,
   type ViewMode,
+  type CalendarEvent,
 } from "@/components/applications/types"
+
+function mapApiToApplication(item: Record<string, unknown>): Application {
+  return {
+    id: String(item.id ?? ""),
+    jobId: String(item.job_id ?? ""),
+    jobTitle: String(item.job_title ?? ""),
+    company: {
+      name: String(item.company ?? ""),
+      logo: (item.company_logo_url as string) ?? undefined,
+    },
+    score: (item.match_score as number) ?? 0,
+    status: (item.status as ApplicationStatus) ?? "pending",
+    submittedAt: item.applied_at ? new Date(item.applied_at as string) : undefined,
+    lastActivityAt: item.last_activity_at ? new Date(item.last_activity_at as string) : new Date(),
+    daysInStage: 0,
+    source: "API",
+  }
+}
 
 export default function ApplicationsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("kanban")
-  const [applications, setApplications] = useState<Application[]>(mockApplications)
+  const { data: apiApplications, isLoading, error } = useApplications()
+  const [applications, setApplications] = useState<Application[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all")
   const [addDialogOpen, setAddDialogOpen] = useState(false)
@@ -54,6 +76,18 @@ export default function ApplicationsPage() {
     status: "pending" as ApplicationStatus,
     url: "",
   })
+
+  // Hydrate local state from API data
+  useEffect(() => {
+    if (apiApplications) {
+      setApplications(
+        apiApplications.map((item) => mapApiToApplication(item as unknown as Record<string, unknown>))
+      )
+    }
+  }, [apiApplications])
+
+  // No calendar API yet - use empty array
+  const calendarEvents: CalendarEvent[] = useMemo(() => [], [])
 
   // Filter applications
   const filteredApplications = applications.filter((app) => {
@@ -139,6 +173,34 @@ export default function ApplicationsPage() {
     })
 
     toast.success(`Added "${newApp.jobTitle}" at ${newApp.company.name}`)
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+        <AlertCircle className="size-10 text-destructive" />
+        <p className="text-sm font-medium">Failed to load applications</p>
+        <p className="text-xs">{(error as Error).message}</p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3 sm:gap-3">
+          <Skeleton className="h-9 w-[200px]" />
+          <Skeleton className="h-9 flex-1 max-w-md" />
+          <Skeleton className="h-9 w-[160px]" />
+          <Skeleton className="h-9 w-[140px]" />
+        </div>
+        <div className="flex-1 p-4 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[300px] rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -347,7 +409,7 @@ export default function ApplicationsPage() {
           />
         )}
         {viewMode === "calendar" && (
-          <CalendarView events={mockCalendarEvents} />
+          <CalendarView events={calendarEvents} />
         )}
       </div>
     </div>

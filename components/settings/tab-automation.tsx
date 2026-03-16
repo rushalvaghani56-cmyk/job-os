@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { mockAutomationSettings } from "./mock-data"
+import { Loader2 } from "lucide-react"
+import { useAutomationSettings } from "@/hooks/useSettings"
 import type { AutomationSettings } from "./types"
 import { cn } from "@/lib/utils"
 
@@ -108,11 +109,52 @@ function TagInput({
   )
 }
 
+/** Map API response to local AutomationSettings shape */
+function mapAutomationSettings(apiData: Record<string, unknown> | undefined): AutomationSettings {
+  const dl = (apiData?.daily_limits ?? apiData?.dailyLimits ?? {}) as Record<string, unknown>
+  return {
+    autoApplyEnabled: (apiData?.auto_apply_enabled ?? apiData?.autoApplyEnabled ?? false) as boolean,
+    scoreThreshold: (apiData?.score_threshold ?? apiData?.scoreThreshold ?? 75) as number,
+    confidenceThreshold: (apiData?.confidence_threshold ?? apiData?.confidenceThreshold ?? 0.8) as number,
+    riskThreshold: (apiData?.risk_threshold ?? apiData?.riskThreshold ?? 0.3) as number,
+    cooldownDelay: (apiData?.cooldown_delay ?? apiData?.cooldownDelay ?? "30min") as string,
+    dailyLimits: {
+      applications: (dl?.applications ?? 25) as number,
+      outreach: (dl?.outreach ?? 15) as number,
+      easyApply: (dl?.easy_apply ?? dl?.easyApply ?? 50) as number,
+    },
+    operatingMode: (apiData?.operating_mode ?? apiData?.operatingMode ?? "approval_required") as AutomationSettings["operatingMode"],
+    dreamCompanies: (apiData?.dream_companies ?? apiData?.dreamCompanies ?? []) as string[],
+    blacklist: (apiData?.blacklist ?? []) as string[],
+  }
+}
+
 export function TabAutomation() {
-  const [settings, setSettings] = React.useState<AutomationSettings>(
-    mockAutomationSettings
-  )
+  const { data: apiData, isLoading, error } = useAutomationSettings()
+  const [settings, setSettings] = React.useState<AutomationSettings | null>(null)
   const [isSaving, setIsSaving] = React.useState(false)
+
+  React.useEffect(() => {
+    if (apiData && !settings) {
+      setSettings(mapAutomationSettings(apiData))
+    }
+  }, [apiData, settings])
+
+  if (isLoading || !settings) {
+    return (
+      <div className="flex items-center justify-center p-10">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border bg-card p-10">
+        <p className="text-sm text-destructive">Failed to load automation settings. Please try again later.</p>
+      </div>
+    )
+  }
 
   const handleSave = async () => {
     setIsSaving(true)

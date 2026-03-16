@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { QueryProvider } from '@/components/providers/query-provider'
+import { AuthListener } from '@/components/auth/auth-listener'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
@@ -57,6 +58,7 @@ export default function RootLayout({
         >
           <QueryProvider>
             <TooltipProvider delayDuration={300}>
+              <AuthListener />
               {children}
               <Toaster position="bottom-right" richColors closeButton />
             </TooltipProvider>

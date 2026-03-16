@@ -33,7 +33,7 @@ export function useCopilot() {
         role: "user",
         content,
         timestamp: new Date().toISOString(),
-        context,
+        context: context ?? undefined,
       };
       addMessage(userMessage);
 

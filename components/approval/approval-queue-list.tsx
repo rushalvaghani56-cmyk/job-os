@@ -210,8 +210,7 @@ export function ApprovalQueueList({
               {/* Checkbox */}
               <Checkbox
                 checked={selectedIds.has(item.id)}
-                onCheckedChange={(e) => {
-                  e.stopPropagation?.()
+                onCheckedChange={() => {
                   onToggleSelect(item.id)
                 }}
                 onClick={(e) => e.stopPropagation()}

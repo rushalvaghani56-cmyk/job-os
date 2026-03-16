@@ -14,20 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useProfiles, useActivateProfile } from "@/hooks/useProfiles"
 
-interface Profile {
+interface ProfileDisplay {
   id: string
   name: string
   role: string
   completeness: number
   isActive: boolean
 }
-
-const mockProfiles: Profile[] = [
-  { id: "1", name: "Senior Frontend", role: "Senior Frontend Engineer", completeness: 85, isActive: true },
-  { id: "2", name: "Full Stack", role: "Full Stack Developer", completeness: 62, isActive: false },
-  { id: "3", name: "Tech Lead", role: "Engineering Manager", completeness: 45, isActive: false },
-]
 
 interface MiniCompletenessRingProps {
   percentage: number
@@ -81,7 +76,21 @@ interface ProfileSwitcherProps {
 }
 
 export function ProfileSwitcher({ collapsed = false }: ProfileSwitcherProps) {
-  const [activeProfile, setActiveProfile] = React.useState(mockProfiles[0])
+  const { data: profiles = [] } = useProfiles()
+  const activateProfile = useActivateProfile()
+
+  const activeProfile: ProfileDisplay | undefined = React.useMemo(() => {
+    const active = profiles.find((p) => p.is_active)
+    if (!active) return profiles[0] ? { id: profiles[0].id, name: profiles[0].name, role: profiles[0].target_role, completeness: profiles[0].completeness, isActive: true } : undefined
+    return { id: active.id, name: active.name, role: active.target_role, completeness: active.completeness, isActive: true }
+  }, [profiles])
+
+  const displayProfiles: ProfileDisplay[] = React.useMemo(
+    () => profiles.map((p) => ({ id: p.id, name: p.name, role: p.target_role, completeness: p.completeness, isActive: p.is_active })),
+    [profiles]
+  )
+
+  if (!activeProfile) return null
 
   const content = (
     <DropdownMenu>
@@ -129,10 +138,10 @@ export function ProfileSwitcher({ collapsed = false }: ProfileSwitcherProps) {
           Switch Profile
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {mockProfiles.map((profile) => (
+        {displayProfiles.map((profile) => (
           <DropdownMenuItem
             key={profile.id}
-            onClick={() => setActiveProfile(profile)}
+            onClick={() => activateProfile.mutate(profile.id)}
             className="flex items-center gap-3 py-2 cursor-pointer"
           >
             <div className="relative flex items-center justify-center">

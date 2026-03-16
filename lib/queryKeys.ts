@@ -2,7 +2,6 @@ import type { JobFilter } from "@/types/jobs";
 
 /**
  * Centralized query key factory for TanStack Query
- * This ensures consistent query key structure across the app
  */
 export const queryKeys = {
   // Jobs
@@ -61,6 +60,7 @@ export const queryKeys = {
   // Analytics
   analytics: {
     all: ["analytics"] as const,
+    dashboard: () => [...queryKeys.analytics.all, "dashboard"] as const,
     funnel: (period: string) => [...queryKeys.analytics.all, "funnel", period] as const,
     sources: (period: string) => [...queryKeys.analytics.all, "sources", period] as const,
     rejections: (period: string) => [...queryKeys.analytics.all, "rejections", period] as const,
@@ -69,7 +69,6 @@ export const queryKeys = {
     skills: () => [...queryKeys.analytics.all, "skills"] as const,
     timing: () => [...queryKeys.analytics.all, "timing"] as const,
     aiCost: (period: string) => [...queryKeys.analytics.all, "aicost", period] as const,
-    dashboard: () => [...queryKeys.analytics.all, "dashboard"] as const,
   },
 
   // Notifications
@@ -121,5 +120,29 @@ export const queryKeys = {
     list: (filters?: Record<string, unknown>) => [...queryKeys.interviews.lists(), filters] as const,
     upcoming: () => [...queryKeys.interviews.all, "upcoming"] as const,
     detail: (id: string) => [...queryKeys.interviews.all, "detail", id] as const,
+  },
+
+  // Content
+  content: {
+    all: ["content"] as const,
+    variants: (jobId: string) => [...queryKeys.content.all, "variants", jobId] as const,
+  },
+
+  // Skills
+  skills: {
+    all: ["skills"] as const,
+    byProfile: (profileId: string) => [...queryKeys.skills.all, profileId] as const,
+  },
+
+  // Experience
+  experience: {
+    all: ["experience"] as const,
+    byProfile: (profileId: string) => [...queryKeys.experience.all, profileId] as const,
+  },
+
+  // Education
+  education: {
+    all: ["education"] as const,
+    byProfile: (profileId: string) => [...queryKeys.education.all, profileId] as const,
   },
 } as const;
