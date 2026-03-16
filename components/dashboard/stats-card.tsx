@@ -47,7 +47,7 @@ export function StatsCard({
     return (
       <Card
         className={cn(
-          "p-5 hover:shadow-md transition-shadow border-l-4",
+          "p-5 hover:shadow-md transition-all duration-200 hover:shadow-sm border-l-4",
           accentColors[accentColor]
         )}
       >
@@ -69,7 +69,7 @@ export function StatsCard({
     return (
       <Card
         className={cn(
-          "p-5 hover:shadow-md transition-shadow border-l-4",
+          "p-5 hover:shadow-md transition-all duration-200 hover:shadow-sm border-l-4",
           accentColors[accentColor]
         )}
       >
@@ -97,7 +97,7 @@ export function StatsCard({
   return (
     <Card
       className={cn(
-        "p-5 hover:shadow-md transition-shadow border-l-4",
+        "p-5 hover:shadow-md transition-all duration-200 hover:shadow-sm border-l-4",
         accentColors[accentColor],
         onClick && "cursor-pointer"
       )}

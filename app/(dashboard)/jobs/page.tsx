@@ -198,7 +198,7 @@ export default function JobsPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <div className="flex items-center gap-3 p-4 border-b border-border bg-background">
+        <div className="flex flex-wrap items-center gap-3 p-4 border-b border-border bg-background">
           {/* View Toggle */}
           <ToggleGroup
             type="single"
@@ -242,7 +242,7 @@ export default function JobsPage() {
 
           {/* Sort */}
           <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-auto min-w-[120px] sm:w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>

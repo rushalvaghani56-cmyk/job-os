@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
 
           {/* Profile Filter */}
           <Select value={profile} onValueChange={setProfile}>
-            <SelectTrigger className="w-[140px] rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
+            <SelectTrigger className="w-auto min-w-[100px] sm:w-[140px] rounded-lg focus-visible:ring-2 focus-visible:ring-primary">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Profile" />
             </SelectTrigger>

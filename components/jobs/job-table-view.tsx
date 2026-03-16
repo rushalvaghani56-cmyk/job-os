@@ -142,6 +142,7 @@ export function JobTableView({
 
   return (
     <TooltipProvider>
+      <div className="overflow-x-auto -mx-4 px-4">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -264,7 +265,7 @@ export function JobTableView({
                 </Tooltip>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -307,6 +308,7 @@ export function JobTableView({
           ))}
         </TableBody>
       </Table>
+      </div>
     </TooltipProvider>
   )
 }

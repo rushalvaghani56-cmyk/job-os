@@ -17,7 +17,7 @@ function AppShellContent({ children }: AppShellContentProps) {
   const { sidebarCollapsed, copilotOpen } = useShell()
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-[100dvh] bg-background overflow-x-hidden">
       {/* Sidebar - Hidden on mobile */}
       <SidebarNav />
 

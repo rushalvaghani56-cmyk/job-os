@@ -25,8 +25,8 @@ export function BulkActionsBar({
   if (selectedCount === 0) return null
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-2 px-4 py-3 bg-background border border-border rounded-xl shadow-lg">
+    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)]">
+      <div className="flex flex-wrap items-center justify-center gap-2 px-4 py-3 bg-background border border-border rounded-xl shadow-lg animate-in slide-in-from-bottom-4 duration-200">
         <span className="text-sm font-medium mr-2">
           {selectedCount} selected
         </span>
