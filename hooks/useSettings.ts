@@ -69,14 +69,15 @@ export function useAPIKeys() {
 export function useAutomationSettings() {
   return useQuery({
     queryKey: queryKeys.settings.automation(),
-    queryFn: async () => {
+    queryFn: async (): Promise<Record<string, unknown>> => {
       try {
-        const response = await apiClient.get<{ data: Record<string, unknown> }>(
+        const response = await apiClient.get<{ user: Record<string, unknown> }>(
           "/api/v1/auth/settings"
         );
-        return response.data.data;
+        const settings = (response.data.user?.settings as Record<string, unknown>) ?? {};
+        return (settings.automation_config ?? {}) as Record<string, unknown>;
       } catch {
-        return {};
+        return {} as Record<string, unknown>;
       }
     },
     retry: false,
@@ -86,14 +87,15 @@ export function useAutomationSettings() {
 export function useScoringSettings() {
   return useQuery({
     queryKey: queryKeys.settings.scoring(),
-    queryFn: async () => {
+    queryFn: async (): Promise<Record<string, unknown>> => {
       try {
-        const response = await apiClient.get<{ data: Record<string, unknown> }>(
-          "/api/v1/profiles/scoring-weights"
+        const response = await apiClient.get<{ user: Record<string, unknown> }>(
+          "/api/v1/auth/settings"
         );
-        return response.data.data;
+        const settings = (response.data.user?.settings as Record<string, unknown>) ?? {};
+        return (settings.scoring_weights ?? {}) as Record<string, unknown>;
       } catch {
-        return {};
+        return {} as Record<string, unknown>;
       }
     },
     retry: false,
