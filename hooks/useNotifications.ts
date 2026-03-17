@@ -15,7 +15,8 @@ export function useNotifications(filters?: Record<string, unknown>) {
         "/api/v1/notifications",
         { params: filters }
       );
-      return response.data.data;
+      const items = response.data.data;
+      return Array.isArray(items) ? items : [];
     },
   });
 }
