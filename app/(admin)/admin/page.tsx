@@ -10,7 +10,6 @@ import {
   Activity,
   Megaphone,
   Shield,
-  ChevronDown,
   MoreHorizontal,
   Ban,
   UserCheck,
@@ -33,11 +32,6 @@ import {
 } from "@/hooks/useAdmin"
 import type { AdminUser, AdminFeatureFlag, AdminService } from "@/hooks/useAdmin"
 import { useDebounce } from "@/hooks/useDebounce"
-import { useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from "@/lib/queryKeys"
-import apiClient from "@/lib/api"
-import { useQuery } from "@tanstack/react-query"
-import type { DataResponse } from "@/types/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -103,35 +97,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-// Types
-interface User {
-  id: string
-  name: string
-  email: string
-  plan: "free" | "pro" | "enterprise"
-  status: "active" | "suspended" | "pending"
-  createdAt: Date
-  lastActive: Date
-  profileCount: number
-  jobsDiscovered: number
-  applications: number
-}
-
-interface FeatureFlag {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  rolloutPercentage: number
-}
-
-interface Service {
-  name: string
-  status: "operational" | "degraded" | "outage"
-  uptime: number
-  lastIncident: string | null
-}
-
+// Types (audit log has no API endpoint yet, keeping local)
 interface AuditLog {
   id: string
   timestamp: Date
@@ -140,105 +106,6 @@ interface AuditLog {
   target: string
   details: string
 }
-
-// Mock Data
-const mockUsers: User[] = [
-  {
-    id: "usr_001",
-    name: "John Doe",
-    email: "john@example.com",
-    plan: "pro",
-    status: "active",
-    createdAt: new Date("2024-01-15"),
-    lastActive: new Date("2026-03-14"),
-    profileCount: 3,
-    jobsDiscovered: 247,
-    applications: 38,
-  },
-  {
-    id: "usr_002",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    plan: "enterprise",
-    status: "active",
-    createdAt: new Date("2024-02-20"),
-    lastActive: new Date("2026-03-13"),
-    profileCount: 5,
-    jobsDiscovered: 512,
-    applications: 67,
-  },
-  {
-    id: "usr_003",
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    plan: "free",
-    status: "suspended",
-    createdAt: new Date("2024-06-10"),
-    lastActive: new Date("2026-02-28"),
-    profileCount: 1,
-    jobsDiscovered: 45,
-    applications: 8,
-  },
-  {
-    id: "usr_004",
-    name: "Alice Brown",
-    email: "alice@example.com",
-    plan: "pro",
-    status: "pending",
-    createdAt: new Date("2026-03-10"),
-    lastActive: new Date("2026-03-10"),
-    profileCount: 0,
-    jobsDiscovered: 0,
-    applications: 0,
-  },
-]
-
-const mockFeatureFlags: FeatureFlag[] = [
-  {
-    id: "ff_001",
-    name: "ai_copilot_v2",
-    description: "New AI Copilot with enhanced context awareness",
-    enabled: true,
-    rolloutPercentage: 100,
-  },
-  {
-    id: "ff_002",
-    name: "auto_apply",
-    description: "Automatic job application submission",
-    enabled: true,
-    rolloutPercentage: 75,
-  },
-  {
-    id: "ff_003",
-    name: "email_detection",
-    description: "Gmail integration for email detection",
-    enabled: true,
-    rolloutPercentage: 100,
-  },
-  {
-    id: "ff_004",
-    name: "market_intel_beta",
-    description: "Beta market intelligence features",
-    enabled: false,
-    rolloutPercentage: 0,
-  },
-  {
-    id: "ff_005",
-    name: "interview_prep_ai",
-    description: "AI-powered interview preparation",
-    enabled: true,
-    rolloutPercentage: 50,
-  },
-]
-
-const mockServices: Service[] = [
-  { name: "API Gateway", status: "operational", uptime: 99.99, lastIncident: null },
-  { name: "Job Discovery", status: "operational", uptime: 99.95, lastIncident: "2026-02-15" },
-  { name: "AI Services", status: "operational", uptime: 99.87, lastIncident: "2026-03-01" },
-  { name: "Email Processing", status: "degraded", uptime: 98.5, lastIncident: "2026-03-14" },
-  { name: "Database", status: "operational", uptime: 99.99, lastIncident: null },
-  { name: "File Storage", status: "operational", uptime: 99.97, lastIncident: "2026-01-20" },
-]
 
 const mockAuditLogs: AuditLog[] = [
   {
@@ -284,7 +151,7 @@ function formatDateTime(date: Date) {
   }).format(date)
 }
 
-function getStatusBadge(status: User["status"]) {
+function getStatusBadge(status: AdminUser["status"]) {
   switch (status) {
     case "active":
       return <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Active</Badge>
@@ -295,7 +162,7 @@ function getStatusBadge(status: User["status"]) {
   }
 }
 
-function getPlanBadge(plan: User["plan"]) {
+function getPlanBadge(plan: AdminUser["plan"]) {
   switch (plan) {
     case "free":
       return <Badge variant="outline">Free</Badge>
@@ -306,7 +173,7 @@ function getPlanBadge(plan: User["plan"]) {
   }
 }
 
-function getServiceStatusIcon(status: Service["status"]) {
+function getServiceStatusIcon(status: AdminService["status"]) {
   switch (status) {
     case "operational":
       return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -870,6 +737,48 @@ function AuditLogTab() {
   )
 }
 
+function StatCard({ value, label, isLoading }: { value: number | undefined; label: string; isLoading: boolean }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        {isLoading ? (
+          <Skeleton className="h-8 w-20 mb-1" />
+        ) : (
+          <div className="text-2xl font-bold font-mono">{(value ?? 0).toLocaleString()}</div>
+        )}
+        <p className="text-xs text-muted-foreground">{label}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function AnalyticsTab() {
+  const { data: stats, isLoading, isError, error, refetch } = useAdminStats()
+
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>User Analytics</CardTitle>
+        <CardDescription>
+          Platform-wide usage statistics and metrics.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard value={stats?.totalUsers} label="Total Users" isLoading={isLoading} />
+          <StatCard value={stats?.activeThisWeek} label="Active This Week" isLoading={isLoading} />
+          <StatCard value={stats?.jobsDiscovered} label="Jobs Discovered" isLoading={isLoading} />
+          <StatCard value={stats?.applicationsSent} label="Applications Sent" isLoading={isLoading} />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminPage() {
   return (
     <div className="space-y-6">
@@ -914,42 +823,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Analytics</CardTitle>
-              <CardDescription>
-                Platform-wide usage statistics and metrics.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">1,247</div>
-                    <p className="text-xs text-muted-foreground">Total Users</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">847</div>
-                    <p className="text-xs text-muted-foreground">Active This Week</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">12,456</div>
-                    <p className="text-xs text-muted-foreground">Jobs Discovered</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">3,891</div>
-                    <p className="text-xs text-muted-foreground">Applications Sent</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsTab />
         </TabsContent>
 
         <TabsContent value="flags">

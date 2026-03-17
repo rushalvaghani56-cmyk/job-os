@@ -28,5 +28,5 @@ export {
 export { useFileUpload } from "./useFileUpload";
 export type { UploadedFile, UploadProgress } from "./useFileUpload";
 export { useOptimisticMutation, useSimpleMutation } from "./useOptimisticMutation";
-export { useAdminUsers, useAdminUserDetail, useSuspendUser, useUpdateUserRole, useAdminFeatureFlags, useUpdateFeatureFlags, useSystemHealth } from "./useAdmin";
+export { useAdminUsers, useAdminUserDetail, useAdminStats, useSuspendUser, useUpdateUserRole, useAdminFeatureFlags, useUpdateFeatureFlags, useSystemHealth } from "./useAdmin";
 export type { AdminUser, AdminFeatureFlag, AdminService, SystemHealth, AdminStats } from "./useAdmin";
