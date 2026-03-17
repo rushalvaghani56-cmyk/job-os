@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/tooltip"
 import { Search, Play, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
 import { useProfileStore } from "@/stores/profileStore"
+import { useTriggerDiscovery, useDiscoveryStatus, useSourceHealth } from "@/hooks/useDiscovery"
 
 type SourceStatus = "healthy" | "slow" | "error"
 
@@ -49,18 +49,45 @@ interface DiscoveryStatusProps {
 }
 
 export function DiscoveryStatus({ isLoading = false }: DiscoveryStatusProps) {
-  const [isRunning, setIsRunning] = React.useState(false)
+  const [taskId, setTaskId] = React.useState<string | null>(null)
   const { activeProfile } = useProfileStore()
+  const triggerDiscovery = useTriggerDiscovery()
+  const { data: discoveryStatus } = useDiscoveryStatus(taskId)
+  const { data: sourceHealthData } = useSourceHealth()
 
-  const handleRunNow = async () => {
-    setIsRunning(true)
-    // Simulate discovery running
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    setIsRunning(false)
-    toast.success("Discovery complete", {
-      description: "12 new jobs found",
+  const isRunning = triggerDiscovery.isPending || (!!taskId && discoveryStatus?.status === "running")
+
+  React.useEffect(() => {
+    if (discoveryStatus?.status === "completed" || discoveryStatus?.status === "failed") {
+      setTaskId(null)
+    }
+  }, [discoveryStatus?.status])
+
+  const handleRunNow = () => {
+    if (!activeProfile?.id) return
+    triggerDiscovery.mutate(activeProfile.id, {
+      onSuccess: (data) => {
+        setTaskId(data.task_id)
+      },
     })
   }
+
+  // Merge source health from API with defaults
+  const dynamicSources = React.useMemo(() => {
+    if (!sourceHealthData || typeof sourceHealthData !== "object") return sources
+    const apiSources = sourceHealthData as Record<string, Record<string, string>>
+    return sources.map((s) => {
+      const healthInfo = apiSources[s.name.toLowerCase()]
+      if (healthInfo) {
+        return {
+          ...s,
+          status: (healthInfo.status as SourceStatus) || s.status,
+          lastResponse: healthInfo.response_time || s.lastResponse,
+        }
+      }
+      return s
+    })
+  }, [sourceHealthData])
 
   if (isLoading) {
     return (
@@ -119,7 +146,7 @@ export function DiscoveryStatus({ isLoading = false }: DiscoveryStatusProps) {
         <div className="space-y-2 flex-1">
           <p className="text-xs text-muted-foreground">Source health</p>
           <div className="flex flex-wrap gap-3">
-            {sources.map((source) => (
+            {dynamicSources.map((source) => (
               <Tooltip key={source.name}>
                 <TooltipTrigger asChild>
                   <button

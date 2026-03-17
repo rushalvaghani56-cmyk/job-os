@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
-import { useScoringSettings } from "@/hooks/useSettings"
+import { useScoringSettings, useUpdateScoringSettings } from "@/hooks/useSettings"
 import type { BonusRule } from "./types"
 import { cn } from "@/lib/utils"
 
@@ -223,11 +223,11 @@ function mapScoringData(apiData: Record<string, unknown> | undefined) {
 
 export function TabScoring() {
   const { data: apiData, isLoading, error } = useScoringSettings()
+  const updateMutation = useUpdateScoringSettings()
   const [initialized, setInitialized] = React.useState(false)
   const [weights, setWeights] = React.useState<ScoringWeight[]>(defaultWeights)
   const [bonusRules, setBonusRules] = React.useState<BonusRule[]>(defaultBonusRules)
   const [topJobs, setTopJobs] = React.useState(defaultTopJobs)
-  const [isSaving, setIsSaving] = React.useState(false)
   const [isGettingSuggestion, setIsGettingSuggestion] = React.useState(false)
 
   React.useEffect(() => {
@@ -336,11 +336,19 @@ export function TabScoring() {
     toast.success("AI-optimized weights applied: Increased skill match emphasis based on your profile strengths")
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    setIsSaving(false)
-    toast.success("Scoring settings saved")
+  const handleSave = () => {
+    updateMutation.mutate({
+      weights: weights.map((w) => ({ id: w.id, label: w.label, value: w.value })),
+      bonus_rules: bonusRules.map((r) => ({
+        id: r.id,
+        condition: r.condition,
+        field: r.field,
+        operator: r.operator,
+        value: r.value,
+        bonus: r.bonus,
+        enabled: r.enabled,
+      })),
+    })
   }
 
   return (
@@ -479,11 +487,11 @@ export function TabScoring() {
         </Button>
         <Button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={updateMutation.isPending}
           className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Weights"}
+          {updateMutation.isPending ? "Saving..." : "Save Weights"}
         </Button>
       </div>
     </div>

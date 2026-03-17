@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useUpdateScheduleSettings } from "@/hooks/useSettings"
+import { useTriggerDiscovery } from "@/hooks/useDiscovery"
+import { useProfileStore } from "@/stores/profileStore"
 import type { LucideIcon } from "lucide-react"
 
 interface ScheduleTask {
@@ -213,7 +216,9 @@ function ScheduleCard({
 
 export function TabSchedules() {
   const [tasks, setTasks] = React.useState<ScheduleTask[]>(defaultTasks)
-  const [isSaving, setIsSaving] = React.useState(false)
+  const updateMutation = useUpdateScheduleSettings()
+  const triggerDiscovery = useTriggerDiscovery()
+  const { activeProfile } = useProfileStore()
 
   const handleFrequencyChange = (id: string, frequency: string) => {
     setTasks((prev) =>
@@ -222,6 +227,10 @@ export function TabSchedules() {
   }
 
   const handleRunNow = (id: string) => {
+    const task = tasks.find((t) => t.id === id)
+    if (task?.name === "Job Discovery" && activeProfile?.id) {
+      triggerDiscovery.mutate(activeProfile.id)
+    }
     setTasks((prev) =>
       prev.map((t) =>
         t.id === id
@@ -229,14 +238,18 @@ export function TabSchedules() {
           : t
       )
     )
-    toast.success("Task executed successfully")
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    setIsSaving(false)
-    toast.success("Schedule settings saved")
+  const handleSave = () => {
+    updateMutation.mutate({
+      tasks: tasks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        frequency: t.frequency,
+        timezone: t.timezone,
+        enabled: t.enabled,
+      })),
+    })
   }
 
   return (
@@ -262,11 +275,11 @@ export function TabSchedules() {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={updateMutation.isPending}
           className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Changes"}
+          {updateMutation.isPending ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>

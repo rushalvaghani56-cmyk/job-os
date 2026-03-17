@@ -69,14 +69,15 @@ export function useAPIKeys() {
 export function useAutomationSettings() {
   return useQuery({
     queryKey: queryKeys.settings.automation(),
-    queryFn: async () => {
+    queryFn: async (): Promise<Record<string, unknown>> => {
       try {
-        const response = await apiClient.get<{ data: Record<string, unknown> }>(
+        const response = await apiClient.get<{ user: Record<string, unknown> }>(
           "/api/v1/auth/settings"
         );
-        return response.data.data;
+        const settings = (response.data.user?.settings as Record<string, unknown>) ?? {};
+        return (settings.automation_config ?? {}) as Record<string, unknown>;
       } catch {
-        return {};
+        return {} as Record<string, unknown>;
       }
     },
     retry: false,
@@ -86,16 +87,88 @@ export function useAutomationSettings() {
 export function useScoringSettings() {
   return useQuery({
     queryKey: queryKeys.settings.scoring(),
-    queryFn: async () => {
+    queryFn: async (): Promise<Record<string, unknown>> => {
       try {
-        const response = await apiClient.get<{ data: Record<string, unknown> }>(
-          "/api/v1/profiles/scoring-weights"
+        const response = await apiClient.get<{ user: Record<string, unknown> }>(
+          "/api/v1/auth/settings"
         );
-        return response.data.data;
+        const settings = (response.data.user?.settings as Record<string, unknown>) ?? {};
+        return (settings.scoring_weights ?? {}) as Record<string, unknown>;
       } catch {
-        return {};
+        return {} as Record<string, unknown>;
       }
     },
     retry: false,
+  });
+}
+
+export function useUpdateScoringSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/scoring_weights", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.scoring() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Scoring settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateAutomationSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/automation_config", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.automation() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Automation settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateSourceSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/job_sources", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.sources() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Source settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateScheduleSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/schedules", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Schedule settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
   });
 }

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/collapsible"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useUpdateSourceSettings } from "@/hooks/useSettings"
 
 interface JobSource {
   id: string
@@ -228,7 +229,7 @@ export function TabSources() {
     { id: "2", url: "https://vercel.com/careers", company: "Vercel" },
   ])
   const [freshnessDays, setFreshnessDays] = React.useState(14)
-  const [isSaving, setIsSaving] = React.useState(false)
+  const updateMutation = useUpdateSourceSettings()
 
   const enabledCount = sources.filter((s) => s.enabled).length
 
@@ -281,11 +282,21 @@ export function TabSources() {
     return "All time"
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    setIsSaving(false)
-    toast.success("Source settings saved")
+  const handleSave = () => {
+    updateMutation.mutate({
+      sources: sources.map((s) => ({
+        id: s.id,
+        name: s.name,
+        enabled: s.enabled,
+        keywords: s.keywords,
+        locations: s.locations,
+      })),
+      career_pages: careerPages.map((p) => ({
+        url: p.url,
+        company: p.company,
+      })),
+      freshness_days: freshnessDays,
+    })
   }
 
   return (
@@ -400,11 +411,11 @@ export function TabSources() {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={updateMutation.isPending}
           className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Changes"}
+          {updateMutation.isPending ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>

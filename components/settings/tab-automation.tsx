@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
-import { useAutomationSettings } from "@/hooks/useSettings"
+import { useAutomationSettings, useUpdateAutomationSettings } from "@/hooks/useSettings"
 import type { AutomationSettings } from "./types"
 import { cn } from "@/lib/utils"
 
@@ -131,8 +131,8 @@ function mapAutomationSettings(apiData: Record<string, unknown> | undefined): Au
 
 export function TabAutomation() {
   const { data: apiData, isLoading, error } = useAutomationSettings()
+  const updateMutation = useUpdateAutomationSettings()
   const [settings, setSettings] = React.useState<AutomationSettings | null>(null)
-  const [isSaving, setIsSaving] = React.useState(false)
 
   React.useEffect(() => {
     if (apiData && !settings) {
@@ -156,11 +156,19 @@ export function TabAutomation() {
     )
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    setIsSaving(false)
-    toast.success("Automation settings saved")
+  const handleSave = () => {
+    if (!settings) return
+    updateMutation.mutate({
+      auto_apply_enabled: settings.autoApplyEnabled,
+      score_threshold: settings.scoreThreshold,
+      confidence_threshold: settings.confidenceThreshold,
+      risk_threshold: settings.riskThreshold,
+      cooldown_delay: settings.cooldownDelay,
+      daily_limits: settings.dailyLimits,
+      operating_mode: settings.operatingMode,
+      dream_companies: settings.dreamCompanies,
+      blacklist: settings.blacklist,
+    })
   }
 
   return (
@@ -426,11 +434,11 @@ export function TabAutomation() {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={updateMutation.isPending}
           className="rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Changes"}
+          {updateMutation.isPending ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>
