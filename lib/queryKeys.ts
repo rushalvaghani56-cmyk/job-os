@@ -108,6 +108,7 @@ export const queryKeys = {
   // Market Intel
   market: {
     all: ["market"] as const,
+    insights: () => [...queryKeys.market.all, "insights"] as const,
     trends: () => [...queryKeys.market.all, "trends"] as const,
     salaries: (filters?: Record<string, unknown>) => [...queryKeys.market.all, "salaries", filters] as const,
     companies: () => [...queryKeys.market.all, "companies"] as const,
@@ -144,5 +145,15 @@ export const queryKeys = {
   education: {
     all: ["education"] as const,
     byProfile: (profileId: string) => [...queryKeys.education.all, profileId] as const,
+  },
+
+  // Admin
+  admin: {
+    all: ["admin"] as const,
+    users: (params?: Record<string, unknown>) => [...queryKeys.admin.all, "users", params] as const,
+    userDetail: (id: string) => [...queryKeys.admin.all, "users", id] as const,
+    featureFlags: () => [...queryKeys.admin.all, "featureFlags"] as const,
+    systemHealth: () => [...queryKeys.admin.all, "systemHealth"] as const,
+    stats: () => [...queryKeys.admin.all, "stats"] as const,
   },
 } as const;

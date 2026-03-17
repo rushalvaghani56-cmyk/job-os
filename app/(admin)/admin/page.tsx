@@ -22,6 +22,22 @@ import {
   Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  useAdminUsers,
+  useAdminStats,
+  useSuspendUser,
+  useAdminFeatureFlags,
+  useUpdateFeatureFlags,
+  useSystemHealth,
+} from "@/hooks/useAdmin"
+import type { AdminUser, AdminFeatureFlag, AdminService } from "@/hooks/useAdmin"
+import { useDebounce } from "@/hooks/useDebounce"
+import { useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/queryKeys"
+import apiClient from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
+import type { DataResponse } from "@/types/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -301,42 +317,83 @@ function getServiceStatusIcon(status: Service["status"]) {
   }
 }
 
+// Shared loading / error helpers
+function TableSkeleton({ rows = 4, cols = 6 }: { rows?: number; cols?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, r) => (
+        <TableRow key={r}>
+          {Array.from({ length: cols }).map((_, c) => (
+            <TableCell key={c}>
+              <Skeleton className="h-4 w-full" />
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </>
+  )
+}
+
+function ErrorCard({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <Card className="border-destructive/30 bg-destructive/5">
+      <CardContent className="flex items-center gap-4 py-6">
+        <XCircle className="h-6 w-6 text-destructive shrink-0" />
+        <div className="flex-1">
+          <p className="font-medium text-destructive">Failed to load data</p>
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </div>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // Components
 function UsersTab() {
   const [search, setSearch] = useState("")
-  const [users, setUsers] = useState(mockUsers)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [statusFilter, setStatusFilter] = useState("all")
+  const debouncedSearch = useDebounce(search, 300)
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
   const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false)
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
-  )
+  const queryParams = {
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+  }
 
-  const handleSuspend = (user: User) => {
+  const { data: usersData, isLoading, isError, error, refetch } = useAdminUsers(queryParams)
+  const suspendMutation = useSuspendUser()
+
+  const users = usersData?.data ?? []
+
+  const handleSuspend = (user: AdminUser) => {
     setSelectedUser(user)
     setSuspendDialogOpen(true)
   }
 
   const confirmSuspend = () => {
     if (selectedUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id
-            ? { ...u, status: u.status === "suspended" ? "active" : "suspended" }
-            : u
-        )
+      suspendMutation.mutate(
+        { userId: selectedUser.id, suspend: selectedUser.status !== "suspended" },
+        { onSettled: () => { setSuspendDialogOpen(false); setSelectedUser(null) } }
       )
     }
-    setSuspendDialogOpen(false)
-    setSelectedUser(null)
   }
 
-  const handleImpersonate = (user: User) => {
+  const handleImpersonate = (user: AdminUser) => {
     setSelectedUser(user)
     setImpersonateDialogOpen(true)
+  }
+
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
   }
 
   return (
@@ -351,7 +408,7 @@ function UsersTab() {
             className="pl-9"
           />
         </div>
-        <Select defaultValue="all">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -380,56 +437,66 @@ function UsersTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getPlanBadge(user.plan)}</TableCell>
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{user.profileCount}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{user.jobsDiscovered}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{user.applications}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(user.lastActive)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleImpersonate(user)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Impersonate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleSuspend(user)}
-                          className={user.status === "suspended" ? "text-emerald-600" : "text-destructive"}
-                        >
-                          {user.status === "suspended" ? (
-                            <>
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Reactivate
-                            </>
-                          ) : (
-                            <>
-                              <Ban className="mr-2 h-4 w-4" />
-                              Suspend
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {isLoading ? (
+                <TableSkeleton rows={4} cols={8} />
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    No users found.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{user.name}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getPlanBadge(user.plan)}</TableCell>
+                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{user.profileCount}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{user.jobsDiscovered}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{user.applications}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(new Date(user.lastActive))}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleImpersonate(user)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Impersonate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleSuspend(user)}
+                            className={user.status === "suspended" ? "text-emerald-600" : "text-destructive"}
+                          >
+                            {user.status === "suspended" ? (
+                              <>
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Reactivate
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="mr-2 h-4 w-4" />
+                                Suspend
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -451,9 +518,10 @@ function UsersTab() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmSuspend}
+              disabled={suspendMutation.isPending}
               className={selectedUser?.status === "suspended" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-destructive hover:bg-destructive/90"}
             >
-              {selectedUser?.status === "suspended" ? "Reactivate" : "Suspend"}
+              {suspendMutation.isPending ? "Processing..." : selectedUser?.status === "suspended" ? "Reactivate" : "Suspend"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -485,22 +553,27 @@ function UsersTab() {
 }
 
 function FeatureFlagsTab() {
-  const [flags, setFlags] = useState(mockFeatureFlags)
+  const { data: flags, isLoading, isError, error, refetch } = useAdminFeatureFlags()
+  const updateMutation = useUpdateFeatureFlags()
 
   const toggleFlag = (id: string) => {
-    setFlags(
-      flags.map((f) =>
-        f.id === id ? { ...f, enabled: !f.enabled } : f
-      )
+    if (!flags) return
+    const updated = flags.map((f) =>
+      f.id === id ? { ...f, enabled: !f.enabled } : f
     )
+    updateMutation.mutate(updated)
   }
 
   const updateRollout = (id: string, percentage: number) => {
-    setFlags(
-      flags.map((f) =>
-        f.id === id ? { ...f, rolloutPercentage: percentage } : f
-      )
+    if (!flags) return
+    const updated = flags.map((f) =>
+      f.id === id ? { ...f, rolloutPercentage: percentage } : f
     )
+    updateMutation.mutate(updated)
+  }
+
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
   }
 
   return (
@@ -516,36 +589,47 @@ function FeatureFlagsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {flags.map((flag) => (
-              <TableRow key={flag.id}>
-                <TableCell className="font-mono text-sm">{flag.name}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{flag.description}</TableCell>
-                <TableCell>
-                  <Select
-                    value={String(flag.rolloutPercentage)}
-                    onValueChange={(v) => updateRollout(flag.id, Number(v))}
-                    disabled={!flag.enabled}
-                  >
-                    <SelectTrigger className="h-8 w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[0, 10, 25, 50, 75, 100].map((p) => (
-                        <SelectItem key={p} value={String(p)}>
-                          {p}%
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Switch
-                    checked={flag.enabled}
-                    onCheckedChange={() => toggleFlag(flag.id)}
-                  />
+            {isLoading ? (
+              <TableSkeleton rows={5} cols={4} />
+            ) : !flags || flags.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  No feature flags configured.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              flags.map((flag) => (
+                <TableRow key={flag.id}>
+                  <TableCell className="font-mono text-sm">{flag.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{flag.description}</TableCell>
+                  <TableCell>
+                    <Select
+                      value={String(flag.rolloutPercentage)}
+                      onValueChange={(v) => updateRollout(flag.id, Number(v))}
+                      disabled={!flag.enabled || updateMutation.isPending}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 10, 25, 50, 75, 100].map((p) => (
+                          <SelectItem key={p} value={String(p)}>
+                            {p}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={flag.enabled}
+                      onCheckedChange={() => toggleFlag(flag.id)}
+                      disabled={updateMutation.isPending}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>
@@ -554,13 +638,45 @@ function FeatureFlagsTab() {
 }
 
 function SystemHealthTab() {
-  const [services] = useState(mockServices)
+  const { data: health, isLoading, isError, error, refetch } = useSystemHealth()
 
-  const overallStatus = services.some((s) => s.status === "outage")
-    ? "outage"
-    : services.some((s) => s.status === "degraded")
-    ? "degraded"
-    : "operational"
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-2">
+          <CardContent className="flex items-center gap-4 py-4">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-4 rounded-full" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const services = health?.services ?? []
+  const overallStatus = health?.overallStatus ?? "operational"
 
   return (
     <div className="space-y-6">
@@ -591,7 +707,7 @@ function SystemHealthTab() {
               Last updated: {formatDateTime(new Date())}
             </p>
           </div>
-          <Button variant="outline" size="sm" className="ml-auto">
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>

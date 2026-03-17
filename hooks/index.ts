@@ -12,6 +12,7 @@ export { useSkills, useUpdateSkills } from "./useSkills";
 export { useWorkExperience, useCreateWorkExperience, useUpdateWorkExperience } from "./useExperience";
 export { useEducation, useCreateEducation, useUpdateEducation } from "./useEducation";
 export { useGeneralSettings, useUpdateSettings, useAIModels, useAPIKeys, useAutomationSettings, useScoringSettings } from "./useSettings";
+export { useMarketInsights, useMarketSalary, useMarketTrends } from "./useMarket";
 export { useCopilot } from "./useCopilot";
 export { useKeyboardShortcuts, useShortcut } from "./useKeyboardShortcuts";
 export { useDebounce, useDebouncedCallback, useDebouncedState } from "./useDebounce";
@@ -27,3 +28,5 @@ export {
 export { useFileUpload } from "./useFileUpload";
 export type { UploadedFile, UploadProgress } from "./useFileUpload";
 export { useOptimisticMutation, useSimpleMutation } from "./useOptimisticMutation";
+export { useAdminUsers, useAdminUserDetail, useSuspendUser, useUpdateUserRole, useAdminFeatureFlags, useUpdateFeatureFlags, useSystemHealth } from "./useAdmin";
+export type { AdminUser, AdminFeatureFlag, AdminService, SystemHealth, AdminStats } from "./useAdmin";
