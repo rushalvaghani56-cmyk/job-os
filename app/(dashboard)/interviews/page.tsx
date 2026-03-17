@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import {
   format,
   startOfMonth,
@@ -29,6 +30,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import apiClient from "@/lib/api"
+import { queryKeys } from "@/lib/queryKeys"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -41,8 +44,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
+import type { DataResponse } from "@/types/api"
 
 // Interview round types with colors
 type RoundType =
@@ -136,285 +141,49 @@ interface Interview {
   }
 }
 
-// Mock data
-const mockInterviews: Interview[] = [
-  {
-    id: "int_001",
-    companyName: "Stripe",
-    companyLogo: "/logos/stripe.svg",
-    role: "Senior Software Engineer",
-    roundType: "technical",
-    dateTime: new Date(2026, 2, 16, 10, 0),
-    timezone: "PST",
-    platform: "zoom",
-    meetingLink: "https://zoom.us/j/123456789",
-    interviewer: {
-      name: "Sarah Chen",
-      title: "Staff Engineer",
-      linkedinUrl: "https://linkedin.com/in/sarahchen",
+// API response shape — the backend may return dateTime as an ISO string
+interface InterviewApiResponse extends Omit<Interview, "dateTime"> {
+  dateTime: string | Date
+}
+
+function useInterviews() {
+  return useQuery({
+    queryKey: queryKeys.interviews.list(),
+    queryFn: async (): Promise<Interview[]> => {
+      const response = await apiClient.get<
+        DataResponse<InterviewApiResponse[]>
+      >("/api/v1/interviews")
+      return response.data.data.map((item) => ({
+        ...item,
+        dateTime:
+          typeof item.dateTime === "string"
+            ? parseISO(item.dateTime)
+            : item.dateTime,
+      }))
     },
-    prepPackUrl: "/prep/stripe-technical",
-    checklist: {
-      prepReviewed: true,
-      starAnswersReady: true,
-      questionsPrepared: false,
-      techSetupTested: false,
-      salaryAnchorMemorized: true,
-    },
-    notes: "Focus on system design patterns and scalability.",
-  },
-  {
-    id: "int_002",
-    companyName: "Vercel",
-    companyLogo: "/logos/vercel.svg",
-    role: "Full Stack Engineer",
-    roundType: "phone_screen",
-    dateTime: new Date(2026, 2, 14, 14, 30),
-    timezone: "PST",
-    platform: "google_meet",
-    meetingLink: "https://meet.google.com/abc-defg-hij",
-    interviewer: {
-      name: "Mike Johnson",
-      title: "Recruiting Lead",
-      linkedinUrl: "https://linkedin.com/in/mikejohnson",
-    },
-    prepPackUrl: "/prep/vercel-phone",
-    checklist: {
-      prepReviewed: true,
-      starAnswersReady: true,
-      questionsPrepared: true,
-      techSetupTested: true,
-      salaryAnchorMemorized: true,
-    },
-    notes: "Be ready to discuss Next.js experience.",
-    postInterview: {
-      difficulty: 3,
-      performance: 4,
-      questionsAsked: "Tell me about yourself. Why Vercel? Describe a challenging project.",
-      nextSteps: "Technical round scheduled for next week.",
-    },
-  },
-  {
-    id: "int_003",
-    companyName: "Linear",
-    companyLogo: "/logos/linear.svg",
-    role: "Product Engineer",
-    roundType: "system_design",
-    dateTime: new Date(2026, 2, 18, 11, 0),
-    timezone: "PST",
-    platform: "zoom",
-    meetingLink: "https://zoom.us/j/987654321",
-    interviewer: {
-      name: "Alex Rivera",
-      title: "Engineering Manager",
-      linkedinUrl: "https://linkedin.com/in/alexrivera",
-    },
-    prepPackUrl: "/prep/linear-system-design",
-    checklist: {
-      prepReviewed: false,
-      starAnswersReady: false,
-      questionsPrepared: false,
-      techSetupTested: false,
-      salaryAnchorMemorized: false,
-    },
-    notes: "",
-  },
-  {
-    id: "int_004",
-    companyName: "Notion",
-    companyLogo: "/logos/notion.svg",
-    role: "Senior Frontend Engineer",
-    roundType: "hiring_manager",
-    dateTime: new Date(2026, 2, 20, 15, 0),
-    timezone: "PST",
-    platform: "teams",
-    meetingLink: "https://teams.microsoft.com/meet/123",
-    interviewer: {
-      name: "Emily Watson",
-      title: "VP of Engineering",
-      linkedinUrl: "https://linkedin.com/in/emilywatson",
-    },
-    prepPackUrl: "/prep/notion-hm",
-    checklist: {
-      prepReviewed: false,
-      starAnswersReady: false,
-      questionsPrepared: false,
-      techSetupTested: false,
-      salaryAnchorMemorized: false,
-    },
-    notes: "",
-  },
-  {
-    id: "int_005",
-    companyName: "Figma",
-    companyLogo: "/logos/figma.svg",
-    role: "Staff Engineer",
-    roundType: "final_round",
-    dateTime: new Date(2026, 2, 25, 9, 0),
-    timezone: "PST",
-    platform: "zoom",
-    meetingLink: "https://zoom.us/j/111222333",
-    interviewer: {
-      name: "David Kim",
-      title: "CTO",
-      linkedinUrl: "https://linkedin.com/in/davidkim",
-    },
-    checklist: {
-      prepReviewed: false,
-      starAnswersReady: false,
-      questionsPrepared: false,
-      techSetupTested: false,
-      salaryAnchorMemorized: false,
-    },
-    notes: "",
-  },
-  {
-    id: "int_006",
-    companyName: "Airbnb",
-    companyLogo: "/logos/airbnb.svg",
-    role: "Senior Engineer",
-    roundType: "culture_fit",
-    dateTime: new Date(2026, 2, 14, 16, 0),
-    timezone: "PST",
-    platform: "google_meet",
-    meetingLink: "https://meet.google.com/xyz-uvwx-rst",
-    interviewer: {
-      name: "Jessica Lee",
-      title: "People Partner",
-      linkedinUrl: "https://linkedin.com/in/jessicalee",
-    },
-    checklist: {
-      prepReviewed: true,
-      starAnswersReady: true,
-      questionsPrepared: true,
-      techSetupTested: true,
-      salaryAnchorMemorized: true,
-    },
-    notes: "Review Airbnb's core values.",
-    postInterview: {
-      difficulty: 2,
-      performance: 5,
-      questionsAsked: "Describe a time you handled conflict. How do you approach collaboration?",
-      nextSteps: "Awaiting feedback from the team.",
-    },
-  },
-  // More future interviews
-  {
-    id: "int_007",
-    companyName: "Shopify",
-    companyLogo: "/logos/shopify.svg",
-    role: "Staff Engineer",
-    roundType: "technical",
-    dateTime: new Date(2026, 2, 17, 13, 0),
-    timezone: "PST",
-    platform: "zoom",
-    meetingLink: "https://zoom.us/j/444555666",
-    interviewer: {
-      name: "Ryan Park",
-      title: "Principal Engineer",
-      linkedinUrl: "https://linkedin.com/in/ryanpark",
-    },
-    checklist: {
-      prepReviewed: false,
-      starAnswersReady: false,
-      questionsPrepared: false,
-      techSetupTested: false,
-      salaryAnchorMemorized: false,
-    },
-    notes: "",
-  },
-  {
-    id: "int_008",
-    companyName: "Datadog",
-    companyLogo: "/logos/datadog.svg",
-    role: "Senior Backend Engineer",
-    roundType: "phone_screen",
-    dateTime: new Date(2026, 2, 19, 10, 30),
-    timezone: "PST",
-    platform: "google_meet",
-    meetingLink: "https://meet.google.com/ddd-eee-fff",
-    interviewer: {
-      name: "Priya Sharma",
-      title: "Recruiter",
-      linkedinUrl: "https://linkedin.com/in/priyasharma",
-    },
-    checklist: {
-      prepReviewed: false,
-      starAnswersReady: false,
-      questionsPrepared: false,
-      techSetupTested: false,
-      salaryAnchorMemorized: false,
-    },
-    notes: "",
-  },
-  // Past interviews
-  {
-    id: "int_009",
-    companyName: "Coinbase",
-    companyLogo: "/logos/coinbase.svg",
-    role: "Senior Software Engineer",
-    roundType: "technical",
-    dateTime: new Date(2026, 2, 10, 11, 0),
-    timezone: "PST",
-    platform: "zoom",
-    meetingLink: "https://zoom.us/j/777888999",
-    interviewer: {
-      name: "James Wilson",
-      title: "Engineering Manager",
-      linkedinUrl: "https://linkedin.com/in/jameswilson",
-    },
-    checklist: {
-      prepReviewed: true,
-      starAnswersReady: true,
-      questionsPrepared: true,
-      techSetupTested: true,
-      salaryAnchorMemorized: true,
-    },
-    notes: "Good discussion about distributed systems.",
-    postInterview: {
-      difficulty: 4,
-      performance: 3,
-      questionsAsked: "System design for a payment processing pipeline.",
-      nextSteps: "Waiting on feedback.",
-    },
-  },
-  {
-    id: "int_010",
-    companyName: "Plaid",
-    companyLogo: "/logos/plaid.svg",
-    role: "Backend Engineer",
-    roundType: "hiring_manager",
-    dateTime: new Date(2026, 2, 7, 14, 0),
-    timezone: "PST",
-    platform: "teams",
-    meetingLink: "https://teams.microsoft.com/meet/456",
-    interviewer: {
-      name: "Michelle Chen",
-      title: "Director of Engineering",
-      linkedinUrl: "https://linkedin.com/in/michellechen",
-    },
-    checklist: {
-      prepReviewed: true,
-      starAnswersReady: true,
-      questionsPrepared: true,
-      techSetupTested: true,
-      salaryAnchorMemorized: true,
-    },
-    notes: "Discussed team culture and growth opportunities.",
-    postInterview: {
-      difficulty: 3,
-      performance: 4,
-      questionsAsked: "Leadership experience and career goals.",
-      nextSteps: "Final round scheduled.",
-    },
-  },
-]
+  })
+}
 
 export default function InterviewsPage() {
+  const { data: fetchedInterviews, isLoading, isError } = useInterviews()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<"month" | "week">("month")
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null)
-  const [interviews, setInterviews] = useState<Interview[]>(mockInterviews)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [localUpdates, setLocalUpdates] = useState<Record<string, any>>({})
+
+  // Merge API data with any local (optimistic) edits
+  const interviews = useMemo(() => {
+    if (!fetchedInterviews) return []
+    return fetchedInterviews.map((interview) => ({
+      ...interview,
+      ...localUpdates[interview.id],
+      checklist: {
+        ...interview.checklist,
+        ...(localUpdates[interview.id]?.checklist ?? {}),
+      },
+    }))
+  }, [fetchedInterviews, localUpdates])
 
   // Calculate calendar range based on view mode
   const calendarRange = useMemo(() => {
@@ -464,16 +233,17 @@ export default function InterviewsPage() {
     key: keyof Interview["checklist"],
     value: boolean
   ) => {
-    setInterviews((prev) =>
-      prev.map((interview) =>
-        interview.id === interviewId
-          ? {
-              ...interview,
-              checklist: { ...interview.checklist, [key]: value },
-            }
-          : interview
-      )
-    )
+    setLocalUpdates((prev) => ({
+      ...prev,
+      [interviewId]: {
+        ...prev[interviewId],
+        checklist: {
+          ...interviews.find((i) => i.id === interviewId)?.checklist,
+          ...prev[interviewId]?.checklist,
+          [key]: value,
+        },
+      },
+    }))
     if (selectedInterview?.id === interviewId) {
       setSelectedInterview((prev) =>
         prev
@@ -487,11 +257,10 @@ export default function InterviewsPage() {
   }
 
   const updateInterviewNotes = (interviewId: string, notes: string) => {
-    setInterviews((prev) =>
-      prev.map((interview) =>
-        interview.id === interviewId ? { ...interview, notes } : interview
-      )
-    )
+    setLocalUpdates((prev) => ({
+      ...prev,
+      [interviewId]: { ...prev[interviewId], notes },
+    }))
     if (selectedInterview?.id === interviewId) {
       setSelectedInterview((prev) => (prev ? { ...prev, notes } : null))
     }
@@ -501,11 +270,10 @@ export default function InterviewsPage() {
     interviewId: string,
     postInterview: Interview["postInterview"]
   ) => {
-    setInterviews((prev) =>
-      prev.map((interview) =>
-        interview.id === interviewId ? { ...interview, postInterview } : interview
-      )
-    )
+    setLocalUpdates((prev) => ({
+      ...prev,
+      [interviewId]: { ...prev[interviewId], postInterview },
+    }))
     if (selectedInterview?.id === interviewId) {
       setSelectedInterview((prev) => (prev ? { ...prev, postInterview } : null))
     }
@@ -611,8 +379,35 @@ export default function InterviewsPage() {
         ))}
       </div>
 
-      {/* Calendar Grid or Empty State */}
-      {interviews.length === 0 ? (
+      {/* Loading Skeleton */}
+      {isLoading ? (
+        <div className="flex-1 p-4">
+          <div className="mb-2 grid grid-cols-7 gap-1">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={`hdr-${i}`} className="h-6 w-full rounded" />
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <Skeleton
+                key={`cell-${i}`}
+                className="h-[120px] w-full rounded-lg"
+              />
+            ))}
+          </div>
+        </div>
+      ) : isError ? (
+        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+          <CalendarDaysIcon className="mb-4 size-16 text-destructive/50" />
+          <h3 className="mb-2 text-lg font-semibold text-foreground">
+            Failed to load interviews
+          </h3>
+          <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+            Something went wrong while fetching your interviews. Please try again later.
+          </p>
+        </div>
+      ) : /* Calendar Grid or Empty State */
+      interviews.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
           <CalendarDaysIcon className="mb-4 size-16 text-muted-foreground/50" />
           <h3 className="mb-2 text-lg font-semibold text-foreground">

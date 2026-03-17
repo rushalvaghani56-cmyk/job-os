@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import {
   FolderIcon,
   FolderOpenIcon,
@@ -19,6 +19,7 @@ import {
   ChevronRightIcon as ChevronRightNavIcon,
   ZoomInIcon,
   ZoomOutIcon,
+  Loader2Icon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,13 @@ import {
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { FileUploader } from "@/components/shared/file-uploader"
+import {
+  useFiles,
+  useDeleteFile,
+  useDownloadFile,
+  usePresignedUpload,
+  type ApiFile,
+} from "@/hooks/useFiles"
 
 // Types
 interface FileItem {
@@ -67,262 +76,77 @@ interface FolderNode {
   fileCount: number
 }
 
-// Mock data - organized by profile > job as per spec
-const mockFolderTree: FolderNode[] = [
-  {
-    id: "profile-backend",
-    name: "Backend Engineer Search",
-    type: "folder",
-    isActive: true,
-    fileCount: 12,
-    children: [
-      {
-        id: "job-stripe",
-        name: "Stripe - Platform Engineer",
+// Convert ApiFile to local FileItem
+function apiFileToFileItem(apiFile: ApiFile): FileItem {
+  const ext = apiFile.name.split(".").pop()?.toLowerCase() || ""
+  const type = (["pdf", "docx", "png", "jpg", "md"].includes(ext) ? ext : "pdf") as FileItem["type"]
+  return {
+    id: apiFile.id,
+    name: apiFile.name,
+    type,
+    size: apiFile.size,
+    uploadedAt: new Date(apiFile.uploaded_at),
+    qualityScore: apiFile.quality_score,
+    variant: apiFile.variant,
+  }
+}
+
+// Build a folder tree from the flat API file list.
+// Groups files by profile_name > job_name. Files without a profile go into "Uncategorized".
+function buildFolderTree(apiFiles: ApiFile[]): FolderNode[] {
+  const profileMap = new Map<string, { profileId: string; jobs: Map<string, { jobId: string; files: FileItem[] }>; files: FileItem[] }>()
+
+  for (const af of apiFiles) {
+    const profileKey = af.profile_name || af.folder || "Uncategorized"
+    const profileId = af.profile_id || `profile-${profileKey}`
+
+    if (!profileMap.has(profileKey)) {
+      profileMap.set(profileKey, { profileId, jobs: new Map(), files: [] })
+    }
+    const profile = profileMap.get(profileKey)!
+    const fileItem = apiFileToFileItem(af)
+
+    if (af.job_name && af.job_id) {
+      if (!profile.jobs.has(af.job_id)) {
+        profile.jobs.set(af.job_id, { jobId: af.job_id, files: [] })
+      }
+      profile.jobs.get(af.job_id)!.files.push(fileItem)
+    } else {
+      profile.files.push(fileItem)
+    }
+  }
+
+  const tree: FolderNode[] = []
+  for (const [profileName, { profileId, jobs, files }] of profileMap) {
+    const children: FolderNode[] = []
+    let totalFileCount = files.length
+
+    for (const [jobId, { files: jobFiles }] of jobs) {
+      totalFileCount += jobFiles.length
+      // Derive job folder name from first file's job_name
+      const jobFile = apiFiles.find((f) => f.job_id === jobId)
+      children.push({
+        id: `job-${jobId}`,
+        name: jobFile?.job_name || jobId,
         type: "folder",
-        fileCount: 4,
-        files: [
-          {
-            id: "s1",
-            name: "Resume_Variant_A.pdf",
-            type: "pdf",
-            size: 245000,
-            uploadedAt: new Date("2026-03-10"),
-            qualityScore: 94,
-            variant: "A",
-          },
-          {
-            id: "s2",
-            name: "Resume_Variant_B.pdf",
-            type: "pdf",
-            size: 248000,
-            uploadedAt: new Date("2026-03-10"),
-            qualityScore: 92,
-            variant: "B",
-          },
-          {
-            id: "s3",
-            name: "Cover_Letter.pdf",
-            type: "pdf",
-            size: 145000,
-            uploadedAt: new Date("2026-03-10"),
-            qualityScore: 91,
-          },
-          {
-            id: "s4",
-            name: "Application_Answers.md",
-            type: "md",
-            size: 12500,
-            uploadedAt: new Date("2026-03-10"),
-          },
-        ],
-      },
-      {
-        id: "job-google",
-        name: "Google - SWE III",
-        type: "folder",
-        fileCount: 3,
-        files: [
-          {
-            id: "g1",
-            name: "Resume_Variant_A.pdf",
-            type: "pdf",
-            size: 228000,
-            uploadedAt: new Date("2026-03-08"),
-            qualityScore: 93,
-            variant: "A",
-          },
-          {
-            id: "g2",
-            name: "Resume_Variant_B.pdf",
-            type: "pdf",
-            size: 232000,
-            uploadedAt: new Date("2026-03-08"),
-            qualityScore: 90,
-            variant: "B",
-          },
-          {
-            id: "g3",
-            name: "Cover_Letter.pdf",
-            type: "pdf",
-            size: 142000,
-            uploadedAt: new Date("2026-03-08"),
-            qualityScore: 88,
-          },
-        ],
-      },
-      {
-        id: "job-meta",
-        name: "Meta - Production Engineer",
-        type: "folder",
-        fileCount: 5,
-        files: [
-          {
-            id: "m1",
-            name: "Resume_Variant_A.pdf",
-            type: "pdf",
-            size: 241000,
-            uploadedAt: new Date("2026-03-05"),
-            qualityScore: 91,
-            variant: "A",
-          },
-          {
-            id: "m2",
-            name: "Resume_Variant_B.pdf",
-            type: "pdf",
-            size: 245000,
-            uploadedAt: new Date("2026-03-05"),
-            qualityScore: 95,
-            variant: "B",
-          },
-          {
-            id: "m3",
-            name: "Cover_Letter.pdf",
-            type: "pdf",
-            size: 138000,
-            uploadedAt: new Date("2026-03-05"),
-            qualityScore: 87,
-          },
-          {
-            id: "m4",
-            name: "Application_Answers.md",
-            type: "md",
-            size: 15200,
-            uploadedAt: new Date("2026-03-05"),
-          },
-          {
-            id: "m5",
-            name: "Portfolio_Screenshot.png",
-            type: "png",
-            size: 890000,
-            uploadedAt: new Date("2026-03-05"),
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "profile-ml",
-    name: "ML Engineer Search",
-    type: "folder",
-    isActive: false,
-    fileCount: 6,
-    children: [
-      {
-        id: "job-openai",
-        name: "OpenAI - Research Engineer",
-        type: "folder",
-        fileCount: 3,
-        files: [
-          {
-            id: "o1",
-            name: "Resume_Variant_A.pdf",
-            type: "pdf",
-            size: 219000,
-            uploadedAt: new Date("2026-02-28"),
-            qualityScore: 90,
-            variant: "A",
-          },
-          {
-            id: "o2",
-            name: "Cover_Letter.pdf",
-            type: "pdf",
-            size: 134000,
-            uploadedAt: new Date("2026-02-28"),
-            qualityScore: 86,
-          },
-          {
-            id: "o3",
-            name: "Application_Answers.md",
-            type: "md",
-            size: 18900,
-            uploadedAt: new Date("2026-02-28"),
-          },
-        ],
-      },
-      {
-        id: "job-anthropic",
-        name: "Anthropic - ML Engineer",
-        type: "folder",
-        fileCount: 3,
-        files: [
-          {
-            id: "a1",
-            name: "Resume_Variant_A.pdf",
-            type: "pdf",
-            size: 225000,
-            uploadedAt: new Date("2026-02-25"),
-            qualityScore: 88,
-            variant: "A",
-          },
-          {
-            id: "a2",
-            name: "Resume_Variant_B.pdf",
-            type: "pdf",
-            size: 228000,
-            uploadedAt: new Date("2026-02-25"),
-            qualityScore: 92,
-            variant: "B",
-          },
-          {
-            id: "a3",
-            name: "Cover_Letter.pdf",
-            type: "pdf",
-            size: 145000,
-            uploadedAt: new Date("2026-02-25"),
-            qualityScore: 84,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "master-resumes",
-    name: "Master Resumes",
-    type: "folder",
-    fileCount: 2,
-    files: [
-      {
-        id: "master1",
-        name: "Base_Resume_2026.pdf",
-        type: "pdf",
-        size: 245000,
-        uploadedAt: new Date("2026-01-15"),
-        qualityScore: 92,
-      },
-      {
-        id: "master2",
-        name: "Technical_Resume.pdf",
-        type: "pdf",
-        size: 198000,
-        uploadedAt: new Date("2026-01-10"),
-        qualityScore: 88,
-      },
-    ],
-  },
-  {
-    id: "resume-templates",
-    name: "Resume Templates",
-    type: "folder",
-    fileCount: 2,
-    files: [
-      {
-        id: "t1",
-        name: "Modern_ATS_Template.docx",
-        type: "docx",
-        size: 89000,
-        uploadedAt: new Date("2026-01-20"),
-      },
-      {
-        id: "t2",
-        name: "Classic_Template.docx",
-        type: "docx",
-        size: 76000,
-        uploadedAt: new Date("2026-01-18"),
-      },
-    ],
-  },
-]
+        fileCount: jobFiles.length,
+        files: jobFiles,
+      })
+    }
+
+    const node: FolderNode = {
+      id: profileId,
+      name: profileName,
+      type: "folder",
+      fileCount: totalFileCount,
+      files: files.length > 0 ? files : undefined,
+      children: children.length > 0 ? children : undefined,
+    }
+    tree.push(node)
+  }
+
+  return tree
+}
 
 // Helper functions
 function formatFileSize(bytes: number): string {
@@ -768,19 +592,36 @@ function PDFViewerModal({
 
 export default function FilesPage() {
   const { toast } = useToast()
-  const [folderTree] = useState(mockFolderTree)
-  const [selectedFolder, setSelectedFolder] = useState<FolderNode | null>(
-    mockFolderTree[0]?.children?.[0] || mockFolderTree[0]
-  )
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set(["profile-backend"])
-  )
+
+  // Real API hooks
+  const { data: apiFiles, isLoading, isError } = useFiles()
+  const deleteFileMutation = useDeleteFile()
+  const downloadFileMutation = useDownloadFile()
+  const presignedUpload = usePresignedUpload()
+
+  // Build folder tree from API data
+  const folderTree = useMemo(() => {
+    if (!apiFiles || apiFiles.length === 0) return []
+    return buildFolderTree(apiFiles)
+  }, [apiFiles])
+
+  const [selectedFolder, setSelectedFolder] = useState<FolderNode | null>(null)
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
   const [deleteFile, setDeleteFile] = useState<FileItem | null>(null)
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [mobileShowTree, setMobileShowTree] = useState(true)
+
+  // Auto-select first folder when data loads
+  useEffect(() => {
+    if (folderTree.length > 0 && !selectedFolder) {
+      const firstFolder = folderTree[0]
+      setSelectedFolder(firstFolder.children?.[0] || firstFolder)
+      setExpandedFolders(new Set([firstFolder.id]))
+    }
+  }, [folderTree, selectedFolder])
 
   const storageUsed = useMemo(() => getTotalStorageUsed(folderTree), [folderTree])
   const storageLimit = 500 * 1024 * 1024 // 500MB
@@ -810,15 +651,27 @@ export default function FilesPage() {
       title: "Download started",
       description: `Downloading ${file.name}...`,
     })
+    downloadFileMutation.mutate(file.id)
   }
 
   const handleDelete = () => {
     if (deleteFile) {
-      toast({
-        title: "File deleted",
-        description: `${deleteFile.name} has been deleted.`,
+      deleteFileMutation.mutate(deleteFile.id, {
+        onSuccess: () => {
+          // Update selected folder's files in-place to reflect deletion
+          if (selectedFolder?.files) {
+            setSelectedFolder({
+              ...selectedFolder,
+              files: selectedFolder.files.filter((f) => f.id !== deleteFile.id),
+              fileCount: selectedFolder.fileCount - 1,
+            })
+          }
+          setDeleteFile(null)
+        },
+        onError: () => {
+          setDeleteFile(null)
+        },
       })
-      setDeleteFile(null)
     }
   }
 
@@ -882,6 +735,58 @@ export default function FilesPage() {
       </div>
 
       {/* Main Content */}
+      {isLoading ? (
+        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+          {/* Skeleton: Folder Tree */}
+          <div className="w-full shrink-0 border-b md:w-[30%] md:min-w-[280px] md:max-w-[320px] md:border-b-0 md:border-r bg-surface/50 p-3 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 flex-1 rounded" />
+                <Skeleton className="h-4 w-6 rounded" />
+              </div>
+            ))}
+          </div>
+          {/* Skeleton: File Grid */}
+          <div className="flex-1 p-4">
+            <Skeleton className="h-5 w-48 mb-4 rounded" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
+                  <Skeleton className="aspect-[8.5/11] w-full rounded-lg" />
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : isError ? (
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <FileTextIcon className="mx-auto size-12 text-destructive/50 mb-3" />
+            <h3 className="text-base font-medium mb-1">Failed to load files</h3>
+            <p className="text-sm text-muted-foreground">
+              Something went wrong. Please try refreshing the page.
+            </p>
+          </div>
+        </div>
+      ) : folderTree.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <FolderIcon className="mx-auto size-12 text-muted-foreground/50 mb-3" />
+            <h3 className="text-base font-medium mb-1">No files yet</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Upload your first resume or cover letter to get started.
+            </p>
+            <Button onClick={() => setShowUploadDialog(true)}>
+              <UploadIcon className="size-4 mr-1.5" />
+              Upload Files
+            </Button>
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left Panel - Folder Tree (30%, 280px min) */}
         <div
@@ -1016,6 +921,7 @@ export default function FilesPage() {
           </ScrollArea>
         </div>
       </div>
+      )}
 
       {/* PDF Viewer Modal */}
       <PDFViewerModal
@@ -1033,6 +939,9 @@ export default function FilesPage() {
           <FileUploader
             accept=".pdf,.doc,.docx,.md"
             maxSize={10 * 1024 * 1024}
+            onUpload={async (file) => {
+              await presignedUpload.mutateAsync({ file })
+            }}
             onComplete={() => {
               toast({
                 title: "Upload complete",
@@ -1058,8 +967,16 @@ export default function FilesPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDelete}
+              disabled={deleteFileMutation.isPending}
             >
-              Delete
+              {deleteFileMutation.isPending ? (
+                <>
+                  <Loader2Icon className="size-4 mr-1.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

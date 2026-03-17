@@ -10,7 +10,6 @@ import {
   Activity,
   Megaphone,
   Shield,
-  ChevronDown,
   MoreHorizontal,
   Ban,
   UserCheck,
@@ -22,6 +21,17 @@ import {
   Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  useAdminUsers,
+  useAdminStats,
+  useSuspendUser,
+  useAdminFeatureFlags,
+  useUpdateFeatureFlags,
+  useSystemHealth,
+} from "@/hooks/useAdmin"
+import type { AdminUser, AdminFeatureFlag, AdminService } from "@/hooks/useAdmin"
+import { useDebounce } from "@/hooks/useDebounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -87,35 +97,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-// Types
-interface User {
-  id: string
-  name: string
-  email: string
-  plan: "free" | "pro" | "enterprise"
-  status: "active" | "suspended" | "pending"
-  createdAt: Date
-  lastActive: Date
-  profileCount: number
-  jobsDiscovered: number
-  applications: number
-}
-
-interface FeatureFlag {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  rolloutPercentage: number
-}
-
-interface Service {
-  name: string
-  status: "operational" | "degraded" | "outage"
-  uptime: number
-  lastIncident: string | null
-}
-
+// Types (audit log has no API endpoint yet, keeping local)
 interface AuditLog {
   id: string
   timestamp: Date
@@ -124,105 +106,6 @@ interface AuditLog {
   target: string
   details: string
 }
-
-// Mock Data
-const mockUsers: User[] = [
-  {
-    id: "usr_001",
-    name: "John Doe",
-    email: "john@example.com",
-    plan: "pro",
-    status: "active",
-    createdAt: new Date("2024-01-15"),
-    lastActive: new Date("2026-03-14"),
-    profileCount: 3,
-    jobsDiscovered: 247,
-    applications: 38,
-  },
-  {
-    id: "usr_002",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    plan: "enterprise",
-    status: "active",
-    createdAt: new Date("2024-02-20"),
-    lastActive: new Date("2026-03-13"),
-    profileCount: 5,
-    jobsDiscovered: 512,
-    applications: 67,
-  },
-  {
-    id: "usr_003",
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    plan: "free",
-    status: "suspended",
-    createdAt: new Date("2024-06-10"),
-    lastActive: new Date("2026-02-28"),
-    profileCount: 1,
-    jobsDiscovered: 45,
-    applications: 8,
-  },
-  {
-    id: "usr_004",
-    name: "Alice Brown",
-    email: "alice@example.com",
-    plan: "pro",
-    status: "pending",
-    createdAt: new Date("2026-03-10"),
-    lastActive: new Date("2026-03-10"),
-    profileCount: 0,
-    jobsDiscovered: 0,
-    applications: 0,
-  },
-]
-
-const mockFeatureFlags: FeatureFlag[] = [
-  {
-    id: "ff_001",
-    name: "ai_copilot_v2",
-    description: "New AI Copilot with enhanced context awareness",
-    enabled: true,
-    rolloutPercentage: 100,
-  },
-  {
-    id: "ff_002",
-    name: "auto_apply",
-    description: "Automatic job application submission",
-    enabled: true,
-    rolloutPercentage: 75,
-  },
-  {
-    id: "ff_003",
-    name: "email_detection",
-    description: "Gmail integration for email detection",
-    enabled: true,
-    rolloutPercentage: 100,
-  },
-  {
-    id: "ff_004",
-    name: "market_intel_beta",
-    description: "Beta market intelligence features",
-    enabled: false,
-    rolloutPercentage: 0,
-  },
-  {
-    id: "ff_005",
-    name: "interview_prep_ai",
-    description: "AI-powered interview preparation",
-    enabled: true,
-    rolloutPercentage: 50,
-  },
-]
-
-const mockServices: Service[] = [
-  { name: "API Gateway", status: "operational", uptime: 99.99, lastIncident: null },
-  { name: "Job Discovery", status: "operational", uptime: 99.95, lastIncident: "2026-02-15" },
-  { name: "AI Services", status: "operational", uptime: 99.87, lastIncident: "2026-03-01" },
-  { name: "Email Processing", status: "degraded", uptime: 98.5, lastIncident: "2026-03-14" },
-  { name: "Database", status: "operational", uptime: 99.99, lastIncident: null },
-  { name: "File Storage", status: "operational", uptime: 99.97, lastIncident: "2026-01-20" },
-]
 
 const mockAuditLogs: AuditLog[] = [
   {
@@ -268,7 +151,7 @@ function formatDateTime(date: Date) {
   }).format(date)
 }
 
-function getStatusBadge(status: User["status"]) {
+function getStatusBadge(status: AdminUser["status"]) {
   switch (status) {
     case "active":
       return <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Active</Badge>
@@ -279,7 +162,7 @@ function getStatusBadge(status: User["status"]) {
   }
 }
 
-function getPlanBadge(plan: User["plan"]) {
+function getPlanBadge(plan: AdminUser["plan"]) {
   switch (plan) {
     case "free":
       return <Badge variant="outline">Free</Badge>
@@ -290,7 +173,7 @@ function getPlanBadge(plan: User["plan"]) {
   }
 }
 
-function getServiceStatusIcon(status: Service["status"]) {
+function getServiceStatusIcon(status: AdminService["status"]) {
   switch (status) {
     case "operational":
       return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -301,42 +184,83 @@ function getServiceStatusIcon(status: Service["status"]) {
   }
 }
 
+// Shared loading / error helpers
+function TableSkeleton({ rows = 4, cols = 6 }: { rows?: number; cols?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, r) => (
+        <TableRow key={r}>
+          {Array.from({ length: cols }).map((_, c) => (
+            <TableCell key={c}>
+              <Skeleton className="h-4 w-full" />
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </>
+  )
+}
+
+function ErrorCard({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <Card className="border-destructive/30 bg-destructive/5">
+      <CardContent className="flex items-center gap-4 py-6">
+        <XCircle className="h-6 w-6 text-destructive shrink-0" />
+        <div className="flex-1">
+          <p className="font-medium text-destructive">Failed to load data</p>
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </div>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // Components
 function UsersTab() {
   const [search, setSearch] = useState("")
-  const [users, setUsers] = useState(mockUsers)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [statusFilter, setStatusFilter] = useState("all")
+  const debouncedSearch = useDebounce(search, 300)
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
   const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false)
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
-  )
+  const queryParams = {
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+  }
 
-  const handleSuspend = (user: User) => {
+  const { data: usersData, isLoading, isError, error, refetch } = useAdminUsers(queryParams)
+  const suspendMutation = useSuspendUser()
+
+  const users = usersData?.data ?? []
+
+  const handleSuspend = (user: AdminUser) => {
     setSelectedUser(user)
     setSuspendDialogOpen(true)
   }
 
   const confirmSuspend = () => {
     if (selectedUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id
-            ? { ...u, status: u.status === "suspended" ? "active" : "suspended" }
-            : u
-        )
+      suspendMutation.mutate(
+        { userId: selectedUser.id, suspend: selectedUser.status !== "suspended" },
+        { onSettled: () => { setSuspendDialogOpen(false); setSelectedUser(null) } }
       )
     }
-    setSuspendDialogOpen(false)
-    setSelectedUser(null)
   }
 
-  const handleImpersonate = (user: User) => {
+  const handleImpersonate = (user: AdminUser) => {
     setSelectedUser(user)
     setImpersonateDialogOpen(true)
+  }
+
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
   }
 
   return (
@@ -351,7 +275,7 @@ function UsersTab() {
             className="pl-9"
           />
         </div>
-        <Select defaultValue="all">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -380,56 +304,66 @@ function UsersTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getPlanBadge(user.plan)}</TableCell>
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{user.profileCount}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{user.jobsDiscovered}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{user.applications}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(user.lastActive)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleImpersonate(user)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Impersonate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleSuspend(user)}
-                          className={user.status === "suspended" ? "text-emerald-600" : "text-destructive"}
-                        >
-                          {user.status === "suspended" ? (
-                            <>
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Reactivate
-                            </>
-                          ) : (
-                            <>
-                              <Ban className="mr-2 h-4 w-4" />
-                              Suspend
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {isLoading ? (
+                <TableSkeleton rows={4} cols={8} />
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    No users found.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{user.name}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getPlanBadge(user.plan)}</TableCell>
+                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{user.profileCount}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{user.jobsDiscovered}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{user.applications}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(new Date(user.lastActive))}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleImpersonate(user)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Impersonate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleSuspend(user)}
+                            className={user.status === "suspended" ? "text-emerald-600" : "text-destructive"}
+                          >
+                            {user.status === "suspended" ? (
+                              <>
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Reactivate
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="mr-2 h-4 w-4" />
+                                Suspend
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -451,9 +385,10 @@ function UsersTab() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmSuspend}
+              disabled={suspendMutation.isPending}
               className={selectedUser?.status === "suspended" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-destructive hover:bg-destructive/90"}
             >
-              {selectedUser?.status === "suspended" ? "Reactivate" : "Suspend"}
+              {suspendMutation.isPending ? "Processing..." : selectedUser?.status === "suspended" ? "Reactivate" : "Suspend"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -485,22 +420,27 @@ function UsersTab() {
 }
 
 function FeatureFlagsTab() {
-  const [flags, setFlags] = useState(mockFeatureFlags)
+  const { data: flags, isLoading, isError, error, refetch } = useAdminFeatureFlags()
+  const updateMutation = useUpdateFeatureFlags()
 
   const toggleFlag = (id: string) => {
-    setFlags(
-      flags.map((f) =>
-        f.id === id ? { ...f, enabled: !f.enabled } : f
-      )
+    if (!flags) return
+    const updated = flags.map((f) =>
+      f.id === id ? { ...f, enabled: !f.enabled } : f
     )
+    updateMutation.mutate(updated)
   }
 
   const updateRollout = (id: string, percentage: number) => {
-    setFlags(
-      flags.map((f) =>
-        f.id === id ? { ...f, rolloutPercentage: percentage } : f
-      )
+    if (!flags) return
+    const updated = flags.map((f) =>
+      f.id === id ? { ...f, rolloutPercentage: percentage } : f
     )
+    updateMutation.mutate(updated)
+  }
+
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
   }
 
   return (
@@ -516,36 +456,47 @@ function FeatureFlagsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {flags.map((flag) => (
-              <TableRow key={flag.id}>
-                <TableCell className="font-mono text-sm">{flag.name}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{flag.description}</TableCell>
-                <TableCell>
-                  <Select
-                    value={String(flag.rolloutPercentage)}
-                    onValueChange={(v) => updateRollout(flag.id, Number(v))}
-                    disabled={!flag.enabled}
-                  >
-                    <SelectTrigger className="h-8 w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[0, 10, 25, 50, 75, 100].map((p) => (
-                        <SelectItem key={p} value={String(p)}>
-                          {p}%
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Switch
-                    checked={flag.enabled}
-                    onCheckedChange={() => toggleFlag(flag.id)}
-                  />
+            {isLoading ? (
+              <TableSkeleton rows={5} cols={4} />
+            ) : !flags || flags.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  No feature flags configured.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              flags.map((flag) => (
+                <TableRow key={flag.id}>
+                  <TableCell className="font-mono text-sm">{flag.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{flag.description}</TableCell>
+                  <TableCell>
+                    <Select
+                      value={String(flag.rolloutPercentage)}
+                      onValueChange={(v) => updateRollout(flag.id, Number(v))}
+                      disabled={!flag.enabled || updateMutation.isPending}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 10, 25, 50, 75, 100].map((p) => (
+                          <SelectItem key={p} value={String(p)}>
+                            {p}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={flag.enabled}
+                      onCheckedChange={() => toggleFlag(flag.id)}
+                      disabled={updateMutation.isPending}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>
@@ -554,13 +505,45 @@ function FeatureFlagsTab() {
 }
 
 function SystemHealthTab() {
-  const [services] = useState(mockServices)
+  const { data: health, isLoading, isError, error, refetch } = useSystemHealth()
 
-  const overallStatus = services.some((s) => s.status === "outage")
-    ? "outage"
-    : services.some((s) => s.status === "degraded")
-    ? "degraded"
-    : "operational"
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-2">
+          <CardContent className="flex items-center gap-4 py-4">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-4 rounded-full" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const services = health?.services ?? []
+  const overallStatus = health?.overallStatus ?? "operational"
 
   return (
     <div className="space-y-6">
@@ -591,7 +574,7 @@ function SystemHealthTab() {
               Last updated: {formatDateTime(new Date())}
             </p>
           </div>
-          <Button variant="outline" size="sm" className="ml-auto">
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
@@ -754,6 +737,48 @@ function AuditLogTab() {
   )
 }
 
+function StatCard({ value, label, isLoading }: { value: number | undefined; label: string; isLoading: boolean }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        {isLoading ? (
+          <Skeleton className="h-8 w-20 mb-1" />
+        ) : (
+          <div className="text-2xl font-bold font-mono">{(value ?? 0).toLocaleString()}</div>
+        )}
+        <p className="text-xs text-muted-foreground">{label}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function AnalyticsTab() {
+  const { data: stats, isLoading, isError, error, refetch } = useAdminStats()
+
+  if (isError) {
+    return <ErrorCard message={(error as Error)?.message ?? "Unknown error"} onRetry={() => refetch()} />
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>User Analytics</CardTitle>
+        <CardDescription>
+          Platform-wide usage statistics and metrics.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard value={stats?.totalUsers} label="Total Users" isLoading={isLoading} />
+          <StatCard value={stats?.activeThisWeek} label="Active This Week" isLoading={isLoading} />
+          <StatCard value={stats?.jobsDiscovered} label="Jobs Discovered" isLoading={isLoading} />
+          <StatCard value={stats?.applicationsSent} label="Applications Sent" isLoading={isLoading} />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminPage() {
   return (
     <div className="space-y-6">
@@ -798,42 +823,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Analytics</CardTitle>
-              <CardDescription>
-                Platform-wide usage statistics and metrics.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">1,247</div>
-                    <p className="text-xs text-muted-foreground">Total Users</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">847</div>
-                    <p className="text-xs text-muted-foreground">Active This Week</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">12,456</div>
-                    <p className="text-xs text-muted-foreground">Jobs Discovered</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold font-mono">3,891</div>
-                    <p className="text-xs text-muted-foreground">Applications Sent</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsTab />
         </TabsContent>
 
         <TabsContent value="flags">

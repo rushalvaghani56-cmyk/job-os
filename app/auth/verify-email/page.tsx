@@ -7,6 +7,7 @@ import { Briefcase, Mail } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuthStore } from "@/stores/authStore"
+import { supabase } from "@/lib/supabase"
 
 export default function VerifyEmailPage() {
   const router = useRouter()
@@ -29,12 +30,19 @@ export default function VerifyEmailPage() {
   }, [cooldown])
 
   const handleResend = async () => {
-    if (cooldown > 0) return
+    if (cooldown > 0 || !user?.email) return
 
-    // Simulate sending email
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    setResendCount((prev) => prev + 1)
-    setCooldown(60)
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: user.email,
+      })
+      if (error) throw error
+      setResendCount((prev) => prev + 1)
+      setCooldown(60)
+    } catch {
+      // Silently fail — user can retry after cooldown
+    }
   }
 
   return (

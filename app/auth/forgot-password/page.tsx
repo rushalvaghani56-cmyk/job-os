@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FieldGroup, Field, FieldError } from "@/components/ui/field"
 import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validators/auth"
 import { useAuthStore } from "@/stores/authStore"
+import { supabase } from "@/lib/supabase"
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -45,8 +46,11 @@ export default function ForgotPasswordPage() {
     setError("")
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        data.email,
+        { redirectTo: `${window.location.origin}/auth/reset-password` }
+      )
+      if (resetError) throw resetError
       setSubmittedEmail(data.email)
       setIsSubmitted(true)
     } catch {
