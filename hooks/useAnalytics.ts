@@ -75,7 +75,8 @@ export function useGoals() {
         const response = await apiClient.get<{ data: GoalData[] }>(
           "/api/v1/analytics/goals"
         );
-        return response.data.data;
+        const items = response.data.data;
+        return Array.isArray(items) ? items : [];
       } catch {
         return [];
       }

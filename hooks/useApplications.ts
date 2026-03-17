@@ -21,7 +21,8 @@ export function useApplications(filters?: Record<string, unknown>) {
         "/api/v1/applications",
         { params: filters }
       );
-      return response.data.data;
+      const items = response.data.data;
+      return Array.isArray(items) ? items : [];
     },
   });
 }
