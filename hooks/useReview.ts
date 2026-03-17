@@ -94,3 +94,39 @@ export function useRejectReview() {
     },
   });
 }
+
+export function useUndoApproval() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      await apiClient.post(`/api/v1/review/${id}/undo`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.reviews.all });
+      toast.success("Approval undone");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useBulkApprove() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (itemIds: string[]): Promise<{ approved: number }> => {
+      const response = await apiClient.post<{ approved: number }>(
+        "/api/v1/review/bulk-approve",
+        { item_ids: itemIds }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.reviews.all });
+      toast.success(`${data.approved} items approved`);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}

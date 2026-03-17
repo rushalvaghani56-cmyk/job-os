@@ -101,3 +101,74 @@ export function useScoringSettings() {
     retry: false,
   });
 }
+
+export function useUpdateScoringSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/scoring_weights", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.scoring() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Scoring settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateAutomationSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/automation_config", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.automation() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Automation settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateSourceSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/job_sources", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.sources() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Source settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateScheduleSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const response = await apiClient.put("/api/v1/settings/schedules", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      toast.success("Schedule settings saved");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
